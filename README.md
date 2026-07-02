@@ -9,9 +9,3 @@ Static single-page site served via GitHub Pages at [spendtron.com](https://spend
 ## Status
 Demand-validation phase. Building the product only after 5+ credible "would pay ~$99/mo"
 signals from the waitlist form.
-
-## Before it goes live
-- [x] Wire the Formspree endpoint (`https://formspree.io/f/mwvdrdqy`) into `index.html`.
-- [ ] Enable GitHub Pages (Settings → Pages → main / root).
-- [ ] Point spendtron.com DNS at GitHub Pages (A records + www CNAME).
-- [ ] Enforce HTTPS once DNS resolves.
