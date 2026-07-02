@@ -11,7 +11,7 @@ Demand-validation phase. Building the product only after 5+ credible "would pay 
 signals from the waitlist form.
 
 ## Before it goes live
-- [ ] Replace `REPLACE_WITH_FORM_ENDPOINT` in `index.html` with a real Formspree endpoint.
+- [x] Wire the Formspree endpoint (`https://formspree.io/f/mwvdrdqy`) into `index.html`.
 - [ ] Enable GitHub Pages (Settings → Pages → main / root).
 - [ ] Point spendtron.com DNS at GitHub Pages (A records + www CNAME).
 - [ ] Enforce HTTPS once DNS resolves.
