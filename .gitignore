@@ -18,5 +18,9 @@ Thumbs.db
 .env
 .env.local
 
+# Credentials — GitHub App private keys download as .pem; never commit one
+*.pem
+pbcopy
+
 # Google Cloud
 .gcloudignore
