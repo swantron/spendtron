@@ -1,3 +1,4 @@
+const path = require("path");
 const express = require("express");
 const { createAppAuth } = require("@octokit/auth-app");
 const { Octokit } = require("@octokit/rest");
@@ -65,11 +66,7 @@ app.get("/ready", (req, res) => {
 });
 
 app.get("/", (req, res) => {
-  res.type("html").send(`<!doctype html>
-<title>spendtron</title>
-<h1>spendtron</h1>
-<p>Ranks a GitHub org's Actions workflows by real compute cost. One free audit per org, then $99/mo.</p>
-<p><a href="/github/install">Connect GitHub</a></p>`);
+  res.sendFile(path.join(__dirname, "index.html"));
 });
 
 /** Start of the install flow — GitHub's own installation UI handles repo

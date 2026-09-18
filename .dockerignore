@@ -7,3 +7,5 @@ README.md
 test.js
 .env
 .env.local
+*.pem
+pbcopy

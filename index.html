@@ -4,7 +4,7 @@
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <title>spendtron — Find the workflow eating your CI bill</title>
-  <meta name="description" content="GitHub tells you the total. spendtron tells you which workflow — and opens the PR to fix it." />
+  <meta name="description" content="GitHub tells you the total. spendtron tells you which workflow. Read-only GitHub Actions cost audit, available as a GitHub App and an MCP server for Claude and other AI clients." />
   <style>
     :root {
       --bg: #0d1117; --panel: #161b22; --border: #30363d;
@@ -16,85 +16,117 @@
       background: var(--bg); color: var(--text); line-height: 1.6;
       -webkit-font-smoothing: antialiased;
     }
-    .wrap { max-width: 640px; margin: 0 auto; padding: 72px 24px 96px; }
+    .wrap { max-width: 860px; margin: 0 auto; padding: 72px 24px 96px; }
     .eyebrow { color: var(--accent); font-size: 14px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 16px; }
     h1 { font-size: 40px; line-height: 1.15; letter-spacing: -0.02em; margin-bottom: 20px; }
-    .sub { font-size: 19px; color: var(--muted); margin-bottom: 40px; }
+    .sub { font-size: 19px; color: var(--muted); margin-bottom: 40px; max-width: 640px; }
+    h2 { font-size: 22px; margin: 56px 0 16px; letter-spacing: -0.01em; }
+    a { color: var(--accent2); }
     .stat {
       background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
       padding: 28px; margin-bottom: 40px;
     }
     .stat .big { font-size: 52px; font-weight: 700; color: var(--accent); line-height: 1; }
     .stat p { color: var(--muted); margin-top: 12px; font-size: 16px; }
-    h2 { font-size: 22px; margin: 40px 0 16px; letter-spacing: -0.01em; }
-    ul { list-style: none; }
-    li { padding: 12px 0 12px 32px; position: relative; color: var(--text); border-bottom: 1px solid var(--border); }
-    li:last-child { border-bottom: none; }
-    li::before { content: "→"; position: absolute; left: 0; color: var(--accent2); font-weight: 700; }
-    li b { color: var(--text); }
-    .form-card {
+    .paths { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; }
+    .card {
       background: var(--panel); border: 1px solid var(--border); border-radius: 12px;
-      padding: 32px; margin-top: 48px;
+      padding: 28px; display: flex; flex-direction: column; gap: 12px; min-width: 0;
     }
-    .form-card h3 { font-size: 20px; margin-bottom: 8px; }
-    .form-card .hint { color: var(--muted); font-size: 15px; margin-bottom: 24px; }
-    form { display: flex; flex-direction: column; gap: 14px; }
-    input[type=email] {
+    .card h3 { font-size: 20px; }
+    .card p { color: var(--muted); font-size: 15px; }
+    .btn {
+      display: inline-block; text-align: center; background: var(--accent); color: #05100a;
+      border-radius: 8px; padding: 14px 18px; font-size: 16px; font-weight: 600;
+      text-decoration: none; margin-top: auto;
+    }
+    .btn:hover { filter: brightness(1.08); }
+    pre {
       background: var(--bg); border: 1px solid var(--border); border-radius: 8px;
-      padding: 14px 16px; color: var(--text); font-size: 16px;
+      padding: 12px 14px; font-size: 13px; overflow-x: auto; color: var(--text);
     }
-    input[type=email]:focus { outline: none; border-color: var(--accent2); }
-    .radio-row { display: flex; gap: 12px; flex-wrap: wrap; }
-    .radio-row label {
-      flex: 1; min-width: 140px; background: var(--bg); border: 1px solid var(--border);
-      border-radius: 8px; padding: 12px 16px; cursor: pointer; font-size: 15px; color: var(--muted);
-      display: flex; align-items: center; gap: 8px;
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; }
+    ol, ul { list-style: none; counter-reset: step; }
+    li { padding: 12px 0 12px 36px; position: relative; border-bottom: 1px solid var(--border); }
+    li:last-child { border-bottom: none; }
+    ol li { counter-increment: step; }
+    ol li::before {
+      content: counter(step); position: absolute; left: 0; top: 12px; width: 24px; height: 24px;
+      border-radius: 50%; background: var(--panel); border: 1px solid var(--border);
+      color: var(--accent2); font-size: 13px; font-weight: 700; text-align: center; line-height: 22px;
     }
-    .radio-row label:hover { border-color: var(--accent2); }
-    .radio-row input { accent-color: var(--accent); }
-    button {
-      background: var(--accent); color: #05100a; border: none; border-radius: 8px;
-      padding: 15px; font-size: 16px; font-weight: 600; cursor: pointer; margin-top: 6px;
-    }
-    button:hover { filter: brightness(1.08); }
-    .foot { color: var(--muted); font-size: 13px; margin-top: 20px; text-align: center; }
-    .foot b { color: var(--text); }
+    ul li::before { content: "→"; position: absolute; left: 0; color: var(--accent2); font-weight: 700; }
+    .price { display: flex; gap: 20px; flex-wrap: wrap; }
+    .price .card { flex: 1; min-width: 240px; }
+    .price .amt { font-size: 32px; font-weight: 700; color: var(--text); }
+    .foot { color: var(--muted); font-size: 13px; margin-top: 56px; text-align: center; }
   </style>
 </head>
 <body>
   <div class="wrap">
     <div class="eyebrow">spendtron · GitHub Actions cost visibility</div>
     <h1>Find the workflow that's eating your CI bill.</h1>
-    <p class="sub">GitHub shows you a total. It never tells you <em>which workflow</em>. spendtron ranks them by real compute cost — and opens the PR to fix it.</p>
+    <p class="sub">GitHub shows you a total. It never tells you <em>which workflow</em>. spendtron ranks every workflow and repo by real compute cost, then points at the fixes: path filters, caching, cancel-in-progress.</p>
 
     <div class="stat">
       <div class="big">36%</div>
-      <p>In a real audit, a <b>single workflow</b> was 36% of the entire CI compute. The top 3 were 59%. Nobody knew — because GitHub bills by repo, never by workflow, so the biggest line item stays invisible until someone digs for it.</p>
+      <p>In a real audit, a <b>single workflow</b> was 36% of the entire CI compute. The top 3 were 59%. Nobody knew, because GitHub bills by repo, never by workflow, so the biggest line item stays invisible until someone digs for it.</p>
     </div>
 
-    <h2>What it does</h2>
+    <h2>Two ways in</h2>
+    <div class="paths">
+      <div class="card">
+        <h3>Install the GitHub App</h3>
+        <p>Pick the repos you want audited in GitHub's own install screen. You get an API key and your first audit is free.</p>
+        <a class="btn" href="/github/install">Connect GitHub</a>
+      </div>
+      <div class="card">
+        <h3>Use it from your AI client</h3>
+        <p>spendtron is an MCP server. After connecting GitHub, add it to Claude or any MCP client and ask "which of my workflows costs the most?"</p>
+        <pre><code id="mcp-cmd">claude mcp add --transport http spendtron https://spendtron.com/mcp \
+  --header "Authorization: Bearer YOUR_API_KEY"</code></pre>
+      </div>
+    </div>
+
+    <h2>How it works</h2>
+    <ol>
+      <li><b>Connect GitHub.</b> Install the app on the org or repos you choose. It asks for two read-only permissions.</li>
+      <li><b>Save your API key.</b> It's shown once after install. Add it as a bearer token in your MCP client, or keep it for direct calls.</li>
+      <li><b>Run the audit.</b> Call the <code>check_actions_cost</code> tool. No arguments needed, your key identifies your org.</li>
+      <li><b>Read the ranking.</b> Workflows and repos ordered by compute cost, biggest offenders first.</li>
+    </ol>
+
+    <h2>What it can and can't touch</h2>
     <ul>
-      <li><b>Read-only.</b> Scans your Actions usage. No write access to your code, ever.</li>
-      <li><b>Ranks every workflow by cost.</b> The biggest offenders, first — the view GitHub won't give you.</li>
-      <li><b>Opens the fix PRs.</b> Path filters, dependency/browser caching, cancel-in-progress. The boring wins that add up.</li>
+      <li><b>Read-only.</b> Actions: read and Metadata: read. It can't see or change your code, secrets, or settings.</li>
+      <li><b>Scoped by you.</b> It only reads the repos you select at install time, and you can uninstall from GitHub at any time.</li>
+      <li><b>Suggests, never pushes.</b> Fixes are recommendations you apply yourself.</li>
     </ul>
 
-    <div class="form-card">
-      <h3>Get early access</h3>
-      <p class="hint">Building this only if teams actually want it. Two clicks tells me everything.</p>
-      <!-- SET THE ACTION: replace with your Formspree (https://formspree.io) or Tally endpoint. -->
-      <form action="https://formspree.io/f/mwvdrdqy" method="POST">
-        <input type="email" name="email" placeholder="you@company.com" required />
-        <div class="radio-row">
-          <label><input type="radio" name="willingness" value="would_pay_99" required /> I'd pay ~$99/mo</label>
-          <label><input type="radio" name="willingness" value="want_free" /> Want it, but free only</label>
-          <label><input type="radio" name="willingness" value="just_curious" /> Just curious</label>
-        </div>
-        <button type="submit">Join the waitlist</button>
-      </form>
-      <p class="foot">No spam — just one email when it's ready.</p>
+    <h2>Pricing</h2>
+    <div class="price">
+      <div class="card">
+        <h3>First audit</h3>
+        <div class="amt">Free</div>
+        <p>One full audit per connected GitHub org, no card required.</p>
+      </div>
+      <div class="card">
+        <h3>Ongoing</h3>
+        <div class="amt">$99<span style="font-size:16px;color:var(--muted)">/mo</span></div>
+        <p>Unlimited audits for the org. Cancel any time through Stripe.</p>
+      </div>
     </div>
+
+    <p class="foot">spendtron · <a href="/github/install">Connect GitHub</a></p>
   </div>
+  <script>
+    (function () {
+      var el = document.getElementById("mcp-cmd");
+      if (el && location.protocol.indexOf("http") === 0) {
+        el.textContent = el.textContent.replace("https://spendtron.com", location.origin);
+      }
+    })();
+  </script>
   <script data-goatcounter="https://spentron.goatcounter.com/count"
           async src="//gc.zgo.at/count.js"></script>
 </body>
