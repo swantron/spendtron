@@ -1,0 +1,34 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.swantron/spendtron",
+  "title": "spendtron",
+  "description": "Rank your GitHub org's Actions workflows by real compute cost. Read-only audit via GitHub App.",
+  "version": "1.0.0",
+  "websiteUrl": "https://spendtron.com",
+  "repository": {
+    "url": "https://github.com/swantron/spendtron",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://spendtron.com/mcp",
+      "headers": [
+        {
+          "name": "Authorization",
+          "description": "Bearer token: your spendtron API key, shown once after installing the GitHub App at https://spendtron.com/github/install",
+          "value": "Bearer {api_key}",
+          "isRequired": true,
+          "isSecret": true,
+          "variables": {
+            "api_key": {
+              "description": "spendtron API key",
+              "isRequired": true,
+              "isSecret": true
+            }
+          }
+        }
+      ]
+    }
+  ]
+}

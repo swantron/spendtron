@@ -1,0 +1,23 @@
+# spendtron
+
+> spendtron finds which GitHub Actions workflow is eating your CI bill. It ranks a GitHub org's workflows and repos by real compute cost. It is read-only and is available as a GitHub App and as a remote MCP server.
+
+## Connect
+
+- MCP endpoint (streamable HTTP): https://spendtron.com/mcp
+- Auth: `Authorization: Bearer <API key>`. The key is shown once after installing the GitHub App at https://spendtron.com/github/install
+- Claude Code: `claude mcp add --transport http spendtron https://spendtron.com/mcp --header "Authorization: Bearer YOUR_API_KEY"`
+
+## Tool
+
+- `check_actions_cost`: no arguments. Returns the org's GitHub Actions workflows and repos ranked by compute cost, identified by the API key.
+
+## Access and pricing
+
+- GitHub App permissions: Actions (read-only) and Metadata (read-only). It cannot read code or secrets and never pushes changes.
+- The first audit per connected GitHub org is free. After that it is $99/month via Stripe.
+
+## Links
+
+- Home: https://spendtron.com/
+- Install the GitHub App: https://spendtron.com/github/install

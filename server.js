@@ -65,6 +65,8 @@ app.get("/ready", (req, res) => {
   res.status(200).json({ status: "ready", service: "spendtron" });
 });
 
+app.use(express.static(path.join(__dirname, "public")));
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "index.html"));
 });
