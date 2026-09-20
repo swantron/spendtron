@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Privacy — spendtron</title>
+  <style>
+    :root { --bg:#0d1117; --panel:#161b22; --border:#30363d; --text:#e6edf3; --muted:#8b949e; --accent2:#58a6ff; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.6; max-width: 720px; margin: 0 auto; padding: 48px 24px 96px; }
+    a { color: var(--accent2); }
+    h1 { font-size: 32px; margin-bottom: 8px; }
+    .muted { color: var(--muted); }
+    p { color: var(--muted); margin: 16px 0; }
+  </style>
+</head>
+<body>
+  <h1>Privacy</h1>
+  <p class="muted">Last updated September 19, 2026</p>
+  <p>
+    spendtron is a sole proprietorship of Joe Swanson in Bozeman, Montana.
+    Support: <a href="mailto:joe@swantron.com">joe@swantron.com</a>.
+  </p>
+  <p>
+    You connect a GitHub App (spendtron-app) with read-only Actions and Metadata
+    permissions on the repositories you choose. We use that installation to
+    list those repos and sample recent workflow runs so we can rank them by
+    compute. We do not request access to source code, secrets, or write
+    permissions. You can uninstall the App from GitHub at any time.
+  </p>
+  <p>
+    After install we issue an API key. We store only a SHA-256 hash of that
+    key, plus the GitHub installation id and account login, in Postgres (Neon).
+    The raw key is shown once. If you rotate it, the previous hash is replaced.
+  </p>
+  <p>
+    If you subscribe ($99/mo), Stripe processes the card and stores billing
+    email. We store Stripe customer and subscription ids so we can unlock
+    audits while the subscription is active and so you can open the Stripe
+    billing portal. We do not sell GitHub or billing data.
+  </p>
+  <p>
+    GoatCounter records page views on spendtron.com (path, referrer, country,
+    device). That is not a marketing pixel network.
+  </p>
+  <p>
+    To delete an installation row or billing identifiers, uninstall the GitHub
+    App and email <a href="mailto:joe@swantron.com">joe@swantron.com</a>.
+  </p>
+  <p class="muted"><a href="/">spendtron</a> · <a href="/terms">Terms</a></p>
+</body>
+</html>

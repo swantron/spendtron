@@ -66,7 +66,9 @@
   <div class="wrap">
     <div class="eyebrow">spendtron · GitHub Actions cost visibility</div>
     <h1>Find the workflow that's eating your CI bill.</h1>
-    <p class="sub">GitHub shows you a total. It never tells you <em>which workflow</em>. spendtron ranks every workflow and repo by real compute cost, then points at the fixes: path filters, caching, cancel-in-progress.</p>
+    <p class="sub">GitHub shows you a total. It never tells you <em>which workflow</em>. spendtron ranks every workflow and repo by real compute cost.</p>
+
+    <div id="banner" class="stat" hidden></div>
 
     <div class="stat">
       <div class="big">36%</div>
@@ -93,14 +95,14 @@
       <li><b>Connect GitHub.</b> Install the app on the org or repos you choose. It asks for two read-only permissions.</li>
       <li><b>Save your API key.</b> It's shown once after install. Add it as a bearer token in your MCP client, or keep it for direct calls.</li>
       <li><b>Run the audit.</b> Call the <code>check_actions_cost</code> tool. No arguments needed, your key identifies your org.</li>
-      <li><b>Read the ranking.</b> Workflows and repos ordered by compute cost, biggest offenders first.</li>
+      <li><b>Read the ranking.</b> Workflows and repos ordered by compute cost, biggest offenders first. You apply any fixes yourself.</li>
     </ol>
 
     <h2>What it can and can't touch</h2>
     <ul>
       <li><b>Read-only.</b> Actions: read and Metadata: read. It can't see or change your code, secrets, or settings.</li>
       <li><b>Scoped by you.</b> It only reads the repos you select at install time, and you can uninstall from GitHub at any time.</li>
-      <li><b>Suggests, never pushes.</b> Fixes are recommendations you apply yourself.</li>
+      <li><b>Rankings, never pushes.</b> It does not open pull requests or edit workflow files.</li>
     </ul>
 
     <h2>Pricing</h2>
@@ -113,11 +115,11 @@
       <div class="card">
         <h3>Ongoing</h3>
         <div class="amt">$99<span style="font-size:16px;color:var(--muted)">/mo</span></div>
-        <p>Unlimited audits for the org. Cancel any time through Stripe.</p>
+        <p>Unlimited audits for the org. Cancel any time in the Stripe billing portal (linked after Checkout).</p>
       </div>
     </div>
 
-    <p class="foot">spendtron · <a href="/github/install">Connect GitHub</a></p>
+    <p class="foot">spendtron · <a href="/github/install">Connect GitHub</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></p>
   </div>
   <script>
     (function () {
@@ -125,9 +127,26 @@
       if (el && location.protocol.indexOf("http") === 0) {
         el.textContent = el.textContent.replace("https://spendtron.com", location.origin);
       }
+      var params = new URLSearchParams(location.search);
+      var banner = document.getElementById("banner");
+      if (!banner) return;
+      var status = params.get("subscribed");
+      if (status === "success") {
+        banner.hidden = false;
+        var sid = params.get("session_id");
+        banner.innerHTML = sid
+          ? "<p>Subscription active. <a href=\"/billing/portal?session_id=" + encodeURIComponent(sid) + "\">Manage billing</a></p>"
+          : "<p>Subscription active. Manage billing from the receipt Stripe emailed you.</p>";
+      } else if (status === "cancelled") {
+        banner.hidden = false;
+        banner.innerHTML = "<p>Checkout cancelled. You can subscribe anytime after your free audit.</p>";
+      } else if (status === "unavailable") {
+        banner.hidden = false;
+        banner.innerHTML = "<p>Billing is not configured on this host. Email joe@swantron.com.</p>";
+      }
     })();
   </script>
-  <script data-goatcounter="https://spentron.goatcounter.com/count"
+  <script data-goatcounter="https://spendtron.goatcounter.com/count"
           async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

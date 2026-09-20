@@ -21,3 +21,5 @@
 
 - Home: https://spendtron.com/
 - Install the GitHub App: https://spendtron.com/github/install
+- Privacy: https://spendtron.com/privacy
+- Terms: https://spendtron.com/terms
