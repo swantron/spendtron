@@ -17,11 +17,3 @@ gcloud run deploy spendtron \
 
 echo "✓ Deployment complete!"
 gcloud run services describe spendtron --region us-central1 --format='value(status.url)'
-
-# www.spendtron.com should hit this same service so the app can 301 to apex.
-# DNS at Squarespace: CNAME www → ghs.googlehosted.com (Google's Cloud Run
-# custom-domain target). Mapping is idempotent-enough: create, ignore exists.
-echo "Ensuring www.spendtron.com domain mapping..."
-gcloud beta run domain-mappings describe --domain www.spendtron.com --region us-central1 --format='value(metadata.name)' >/dev/null 2>&1 \
-  || gcloud beta run domain-mappings create --service spendtron --domain www.spendtron.com --region us-central1
-
