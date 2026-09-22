@@ -20,6 +20,7 @@
 ## Links
 
 - Home: https://spendtron.com/
+- Audit write-up (812 runs, one workflow was 36% of compute): https://spendtron.com/blog/ci-audit-36-percent
 - Install the GitHub App: https://spendtron.com/github/install
 - Privacy: https://spendtron.com/privacy
 - Terms: https://spendtron.com/terms
