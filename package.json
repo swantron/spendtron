@@ -2,6 +2,7 @@
   "name": "spendtron",
   "version": "1.0.0",
   "description": "GitHub Actions cost auditor — ranks a private org's workflows by real compute cost via MCP",
+  "license": "MIT",
   "main": "server.js",
   "scripts": {
     "start": "node server.js",
