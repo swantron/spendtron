@@ -32,6 +32,11 @@ const {
 } = require("./lib/installations");
 
 const app = express();
+// Cloud Run terminates TLS and forwards over plain HTTP with
+// X-Forwarded-Proto: https — without this, req.protocol reads "http" and
+// every generated URL (MCP endpoint shown post-install, Stripe return URLs)
+// is wrong.
+app.set("trust proxy", true);
 const port = process.env.PORT || 8080;
 
 const GITHUB_APP_ID = process.env.GITHUB_APP_ID;
