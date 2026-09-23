@@ -17,7 +17,7 @@ const {
   verifyRotateToken,
 } = require("./lib/auth");
 const {
-  createSubscribeCheckoutUrl,
+  createUnlockCheckoutUrl,
   createPortalUrl,
   applyStripeEvent,
 } = require("./lib/billing");
@@ -26,10 +26,11 @@ const {
   getInstallationByInstallationId,
   createInstallation,
   rotateApiKey,
-  markFreeTrialUsed,
-  getSubscriptionStatus,
   upsertSubscription,
+  getFixesUnlockedAt,
+  markFixesUnlocked,
 } = require("./lib/installations");
+const { suggestFixes } = require("./lib/suggestFixes");
 
 const app = express();
 // Cloud Run terminates TLS and forwards over plain HTTP with
@@ -96,9 +97,9 @@ ${bodyHtml}
 <p class="muted"><a href="/">Back to spendtron</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></p>`;
 }
 
-async function subscribeUrlFor(installationId) {
-  if (!stripe) return `${APP_BASE_URL}/?subscribed=unavailable`;
-  return createSubscribeCheckoutUrl(stripe, installationId, APP_BASE_URL);
+async function unlockUrlFor(installationId) {
+  if (!stripe) return `${APP_BASE_URL}/?unlocked=unavailable`;
+  return createUnlockCheckoutUrl(stripe, installationId, APP_BASE_URL);
 }
 
 app.use((req, res, next) => {
@@ -130,7 +131,7 @@ app.post(
     }
 
     try {
-      await applyStripeEvent(stripe, event, upsertSubscription);
+      await applyStripeEvent(stripe, event, { upsertSubscription, markFixesUnlocked });
     } catch (err) {
       console.error("Stripe event apply failed:", err);
       return res.status(500).send("Webhook handler failed");
@@ -190,7 +191,6 @@ app.get("/github/callback", async (req, res) => {
     );
     const accountLogin = installation.account.login;
     const host = `${req.protocol}://${req.get("host")}`;
-    const subscribeUrl = await subscribeUrlFor(installationId);
 
     const existing = await getInstallationByInstallationId(installationId);
     if (existing) {
@@ -200,7 +200,7 @@ app.get("/github/callback", async (req, res) => {
           title: `Already connected to ${accountLogin}`,
           bodyHtml: `<p>This GitHub org is already set up. Your existing API key still works — we did not issue a new one.</p>
 <p>If you lost the key, <a href="/github/rotate?installation_id=${installationId}&amp;token=${encodeURIComponent(rotateToken)}">issue a new one</a>. The old key will stop working.</p>
-<p><a href="${escapeHtml(subscribeUrl)}">Subscribe, $99/mo</a> if the free audit is used.</p>`,
+<p>The cost ranking is always free. Confirmed fix diffs (backed by your real run history, not estimates) are $39 one-time to unlock the full list — the first one is always included free.</p>`,
         }),
       );
     }
@@ -218,7 +218,7 @@ app.get("/github/callback", async (req, res) => {
         bodyHtml: `<p>Your API key (shown once — save it now):</p>
 <pre>${escapeHtml(rawApiKey)}</pre>
 <p>Add it as a bearer token in your MCP client's config for <code>${escapeHtml(host)}/mcp</code>.</p>
-<p>Your first <code>check_actions_cost</code> call is free. After that: <a href="${escapeHtml(subscribeUrl)}">subscribe, $99/mo</a>.</p>`,
+<p>The cost ranking is always free — call <code>check_actions_cost</code> any time. Confirmed fix diffs (verified against your real run history, not estimates) come with it: the first one free on every call, $39 one-time to unlock the full list.</p>`,
       }),
     );
   } catch (err) {
@@ -302,30 +302,12 @@ mcpServer.registerTool(
       );
     }
 
-    const alreadyTrialed = Boolean(installation.free_trial_used_at);
-    const subscriptionStatus = await getSubscriptionStatus(
-      installation.installation_id,
-    );
-    const subscribed = subscriptionStatus === "active";
-
-    if (!subscribed && alreadyTrialed) {
-      const subscribeUrl = await subscribeUrlFor(installation.installation_id);
-      return {
-        content: [
-          {
-            type: "text",
-            text: `Your free audit's been used. Subscribe ($99/mo) to keep auditing: ${subscribeUrl}`,
-          },
-        ],
-      };
-    }
-
+    // The ranking alone doesn't beat GitHub's own free Actions Usage
+    // Metrics (GA on every Cloud plan) — no reason to gate it. What's
+    // actually worth paying for is the fix diffs, verified against real
+    // run history, which GitHub's own page doesn't offer.
     const octokit = installationOctokit(installation.installation_id);
     const result = await auditActionsCost(octokit);
-
-    if (!subscribed) {
-      await markFreeTrialUsed(installation.installation_id);
-    }
 
     const lines = [
       `Sampled ${result.sampledRuns} recent runs. Fleet total: ~${result.totalBillMinutes} bill-minutes (~$${result.totalCostUsd}/period at private Ubuntu rates).`,
@@ -343,17 +325,42 @@ mcpServer.registerTool(
       ),
     ];
 
-    if (!subscribed) {
-      const subscribeUrl = await subscribeUrlFor(installation.installation_id);
+    const topRepoSlugs = result.topRepos
+      .map((r) => r.repo.split("/"))
+      .filter((parts) => parts.length === 2)
+      .map(([owner, repo]) => ({ owner, repo }));
+
+    let fixes = [];
+    try {
+      fixes = await suggestFixes(octokit, topRepoSlugs);
+    } catch (err) {
+      console.error("suggestFixes failed:", err.message);
+      // Ranking still stands on its own — a fix-diff failure shouldn't
+      // sink the whole call.
+    }
+
+    if (fixes.length > 0) {
+      const unlockedAt = await getFixesUnlockedAt(installation.installation_id);
       lines.push(
         "",
-        `That was your free audit. Subscribe ($99/mo) for ongoing audits: ${subscribeUrl}`,
+        `${fixes.length} fix diff${fixes.length === 1 ? "" : "s"} confirmed against your actual run history (not estimates):`,
       );
-    } else if (stripe) {
-      lines.push(
-        "",
-        "Manage billing from the Stripe receipt email, or reopen Checkout from this tool after cancel.",
-      );
+
+      if (unlockedAt) {
+        for (const fix of fixes) {
+          lines.push("", `[${fix.repo}] ${fix.summary}`, fix.diff);
+        }
+      } else {
+        const [first, ...rest] = fixes;
+        lines.push("", `FREE — [${first.repo}] ${first.summary}`, first.diff);
+        if (rest.length > 0) {
+          const unlockUrl = await unlockUrlFor(installation.installation_id);
+          lines.push(
+            "",
+            `${rest.length} more confirmed fix${rest.length === 1 ? "" : "es"} found. Unlock the full list ($39 one-time): ${unlockUrl}`,
+          );
+        }
+      }
     }
 
     return { content: [{ type: "text", text: lines.join("\n") }] };

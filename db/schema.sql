@@ -13,12 +13,17 @@ create table if not exists installations (
 create index if not exists installations_api_key_hash_idx
   on installations (api_key_hash);
 
--- One row per installation's Stripe subscription state. Looked up by
--- installation_id, updated by the Stripe webhook on subscription events.
+-- One row per installation's billing state. Looked up by installation_id,
+-- updated by the Stripe webhook. stripe_subscription_id/status are legacy
+-- from the original $99/mo recurring model; fixes_unlocked_at is the
+-- current model — a one-time payment that permanently unlocks fix diffs
+-- for that installation (the ranking itself is always free, matching
+-- GitHub's own Actions Usage Metrics).
 create table if not exists subscriptions (
   installation_id bigint primary key references installations (installation_id),
   stripe_customer_id text not null,
   stripe_subscription_id text,
   status text not null default 'inactive',
+  fixes_unlocked_at timestamptz,
   updated_at timestamptz not null default now()
 );

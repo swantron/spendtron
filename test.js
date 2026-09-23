@@ -204,13 +204,15 @@ function fakeOctokit(reposByOwnerRepo) {
   );
   assert(
     serverCode.includes("await auditActionsCost(octokit)"),
-    "audit runs before trial is marked used",
+    "audit runs unconditionally — the ranking is always free",
   );
-  const auditPos = serverCode.indexOf("await auditActionsCost(octokit)");
-  const trialPos = serverCode.indexOf("await markFreeTrialUsed");
   assert(
-    auditPos !== -1 && trialPos !== -1 && auditPos < trialPos,
-    "free trial is marked used only after a successful audit",
+    !serverCode.includes("alreadyTrialed") && !serverCode.includes("markFreeTrialUsed"),
+    "old free-trial gate on the ranking is gone — ranking matches GitHub's own free Insights, no reason to paywall it",
+  );
+  assert(
+    serverCode.includes("await getFixesUnlockedAt(") && serverCode.includes("await unlockUrlFor("),
+    "fix diffs (not the ranking) are what's gated behind the one-time unlock",
   );
   assert(
     installCode.includes("account_login = excluded.account_login"),
@@ -254,6 +256,11 @@ function fakeOctokit(reposByOwnerRepo) {
     "createPortalUrl is exported",
   );
 
+  assert(
+    typeof billing.createUnlockCheckoutUrl === "function",
+    "createUnlockCheckoutUrl is exported",
+  );
+
   let upserted = null;
   await billing.applyStripeEvent(
     {},
@@ -268,17 +275,47 @@ function fakeOctokit(reposByOwnerRepo) {
         },
       },
     },
-    async (row) => {
-      upserted = row;
+    {
+      upsertSubscription: async (row) => {
+        upserted = row;
+      },
+      markFixesUnlocked: async () => {},
     },
   );
   assert(
     upserted && upserted.status === "canceled",
-    "subscription.deleted stores status canceled",
+    "subscription.deleted stores status canceled (legacy path, harmless if never reached)",
   );
   assert(
     upserted.installationId === 7,
     "subscription event reads installationId from metadata",
+  );
+
+  let unlocked = null;
+  await billing.applyStripeEvent(
+    {},
+    {
+      type: "checkout.session.completed",
+      data: {
+        object: {
+          mode: "payment",
+          metadata: { installationId: "9", purpose: "fixes_unlock" },
+          customer: "cus_y",
+        },
+      },
+    },
+    {
+      upsertSubscription: async () => {
+        throw new Error("should not be called for a one-time unlock");
+      },
+      markFixesUnlocked: async (row) => {
+        unlocked = row;
+      },
+    },
+  );
+  assert(
+    unlocked && unlocked.installationId === 9 && unlocked.stripeCustomerId === "cus_y",
+    "one-time fixes_unlock checkout marks that installation unlocked",
   );
 
   console.log("\n" + "=".repeat(50));
