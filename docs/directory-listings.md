@@ -7,25 +7,28 @@ from that registry, so publishing there first means less to fill in by hand.
 ## Common fields (reuse everywhere)
 
 - **Name:** spendtron
-- **One-liner (≤80 chars):** Find which GitHub Actions workflow is eating your CI bill.
+- **One-liner (≤80 chars):** Find the workflow eating your CI bill — with fix diffs, verified.
 - **Category / tags:** DevOps, CI/CD, GitHub, cost, observability
 - **Repo:** https://github.com/swantron/spendtron
 - **Homepage:** https://spendtron.com
 - **MCP endpoint:** https://spendtron.com/mcp (streamable HTTP)
 - **Auth:** Bearer token (API key). No OAuth.
 - **Tools (1):** `check_actions_cost` — no arguments; ranks the connected GitHub
-  org's Actions workflows and repos by real compute cost.
-- **Pricing:** first audit per GitHub org free, then $99/month via Stripe.
+  org's Actions workflows and repos by real compute cost, plus fix diffs
+  (missing cache, missing `timeout-minutes`) confirmed against real recent
+  run timing, not estimates.
+- **Pricing:** cost ranking and one confirmed fix diff free on every call.
+  Unlocking the full fix list is a one-time $39 — not a subscription.
 - **Logo:** none yet — reuse the landing page's accent green (#3fb950) on
   dark (#0d1117) if a directory wants brand colors.
 
 ### Short description (≤160 chars, for cards/listings)
 
-> Ranks your GitHub org's Actions workflows by real compute cost. Read-only GitHub App + remote MCP server. First audit free, then $99/mo.
+> Ranks your GitHub org's Actions workflows by real compute cost and suggests pasteable fix diffs, confirmed against your run history. Ranking + 1 fix free; rest is $39 one-time.
 
 ### Long description (about/README-style)
 
-> GitHub Actions shows you a total bill. It doesn't show you which workflow drove it — you'd have to open every repo's Actions tab and add up run durations by hand. spendtron does that for you: connect a read-only GitHub App (Actions: read, Metadata: read — no code or secrets access, ever) and call `check_actions_cost` from Claude or any MCP client to get your workflows and repos ranked by compute cost. In one real audit, a single workflow turned out to be 36% of all CI compute across the fleet — invisible until someone looked. The first audit per connected GitHub org is free; ongoing audits are $99/month.
+> GitHub Actions shows you a total bill. It doesn't show you which workflow drove it, and it doesn't tell you what to change. spendtron does both: connect a read-only GitHub App (Actions, Contents, Metadata — no write access, no secrets) and call `check_actions_cost` from Claude or any MCP client to get your workflows and repos ranked by compute cost, plus fix diffs like a missing browser-install cache or a missing `timeout-minutes` guard against a runaway job — each one confirmed against your actual recent run timing before it's ever shown, not an estimate. In one real audit, a single workflow turned out to be 36% of all CI compute across the fleet — invisible until someone looked. The ranking and one confirmed fix are free on every call; unlocking the full fix list is a one-time $39, not a subscription.
 >
 > Write-up: https://spendtron.com/blog/ci-audit-36-percent
 

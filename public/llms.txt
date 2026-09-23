@@ -1,6 +1,6 @@
 # spendtron
 
-> spendtron finds which GitHub Actions workflow is eating your CI bill. It ranks a GitHub org's workflows and repos by real compute cost. It is read-only and is available as a GitHub App and as a remote MCP server.
+> spendtron finds which GitHub Actions workflow is eating your CI bill, and suggests pasteable fix diffs verified against your real run history. It ranks a GitHub org's workflows and repos by real compute cost. It is read-only and is available as a GitHub App and as a remote MCP server.
 
 ## Connect
 
@@ -10,12 +10,12 @@
 
 ## Tool
 
-- `check_actions_cost`: no arguments. Returns the org's GitHub Actions workflows and repos ranked by compute cost, identified by the API key.
+- `check_actions_cost`: no arguments. Returns the org's GitHub Actions workflows and repos ranked by compute cost, plus fix diffs (e.g. missing cache, missing timeout-minutes) confirmed against real recent run timing — not estimates. Identified by the API key.
 
 ## Access and pricing
 
-- GitHub App permissions: Actions (read-only) and Metadata (read-only). It cannot read code or secrets and never pushes changes.
-- The first audit per connected GitHub org is free. After that it is $99/month via Stripe.
+- GitHub App permissions: Actions, Contents, and Metadata (all read-only). It cannot write to your repo, see secrets, or push changes — Contents access is used only to read workflow YAML for the fix-diff suggestions.
+- The cost ranking is always free, on every call, with no limit. One confirmed fix diff is included free on every call. Unlocking the full list of confirmed fixes for your org is a one-time $39 payment — not a subscription.
 
 ## Links
 
