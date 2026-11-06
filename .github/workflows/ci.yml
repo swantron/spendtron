@@ -30,6 +30,9 @@ jobs:
     needs: test
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      id-token: write
     steps:
       - name: Checkout code
         uses: actions/checkout@v7
@@ -37,8 +40,8 @@ jobs:
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v3
         with:
-          credentials_json: "${{ secrets.GCP_SA_KEY }}"
-
+          workload_identity_provider: projects/859987510755/locations/global/workloadIdentityPools/github/providers/github-oidc
+          service_account: 859987510755-compute@developer.gserviceaccount.com
       - name: Set up Cloud SDK
         uses: google-github-actions/setup-gcloud@v3
 
