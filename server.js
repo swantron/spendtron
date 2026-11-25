@@ -134,9 +134,9 @@ function escapeHtml(value) {
 function connectedPage({ title, bodyHtml }) {
   return `<!doctype html>
 <title>spendtron — ${escapeHtml(title)}</title>
-<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
-<link rel="icon" href="/favicon.ico" sizes="32x32" />
-<link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+<link rel="icon" href="/favicon.svg?v=2" type="image/svg+xml" />
+<link rel="icon" href="/favicon.ico?v=2" sizes="32x32" />
+<link rel="apple-touch-icon" href="/apple-touch-icon.png?v=2" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <style>
   :root { --bg:#0d1117; --panel:#161b22; --border:#30363d; --text:#e6edf3; --muted:#8b949e; --accent2:#58a6ff; }
