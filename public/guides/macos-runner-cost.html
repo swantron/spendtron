@@ -1,0 +1,100 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Why macOS runners cost about 10× Linux on GitHub Actions — spendtron</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/favicon.ico" sizes="32x32" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <meta name="description" content="A macOS minute on GitHub Actions is $0.062 against $0.006 for Linux. When a job really needs macOS, and how to keep it off every pull request when it doesn&#x27;t." />
+  <link rel="canonical" href="https://spendtron.com/guides/macos-runner-cost" />
+  <meta property="og:title" content="Why macOS runners cost about 10× Linux on GitHub Actions" />
+  <meta property="og:description" content="A macOS minute on GitHub Actions is $0.062 against $0.006 for Linux. When a job really needs macOS, and how to keep it off every pull request when it doesn&#x27;t." />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://spendtron.com/guides/macos-runner-cost" />
+  <style>
+    :root { --bg:#0d1117; --panel:#161b22; --border:#30363d; --text:#e6edf3; --muted:#8b949e; --accent:#3fb950; --accent2:#58a6ff; }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; max-width: 760px; margin: 0 auto; padding: 48px 24px 96px; }
+    a { color: var(--accent2); }
+    h1 { font-size: 34px; line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 8px; }
+    h2 { font-size: 22px; margin: 40px 0 8px; }
+    h3 { font-size: 17px; margin: 24px 0 4px; }
+    p, li { color: var(--muted); }
+    p { margin: 14px 0; }
+    b, strong { color: var(--text); }
+    ul, ol { padding-left: 22px; margin: 14px 0; }
+    li { margin: 8px 0; }
+    .eyebrow { color: var(--accent); font-size: 14px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 12px; }
+    .eyebrow a { color: var(--accent); text-decoration: none; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 15px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    th { color: var(--text); font-weight: 600; }
+    td { color: var(--muted); }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92em; }
+    pre { background: #010409; border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; overflow-x: auto; font-size: 13px; line-height: 1.5; }
+    .note { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; margin: 20px 0; }
+    .cta { margin-top: 40px; padding: 20px 24px; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; }
+    .cta p { margin: 6px 0; }
+    .foot { margin-top: 48px; font-size: 13px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="eyebrow"><a href="/">spendtron</a> · Guide</div>
+  <h1>Why macOS runners cost about 10× Linux, and when you need one</h1>
+  <p>A standard macOS runner on GitHub Actions is <strong>$0.062 a minute</strong>. A standard 2-core Linux runner is <strong>$0.006</strong>. That's a factor of about 10.3. The larger macOS runners are $0.077 (12-core) and $0.102 (M2 Pro, 5-core).</p>
+  <p>In practice that means one 15-minute macOS job costs about the same as two and a half hours of Linux. A cross-platform test matrix that adds a macOS cell to every pull request often ends up as most of the bill, even though it's one cell out of many.</p>
+  <div class="note"><p>On <strong>public repositories</strong>, standard macOS runners are free like the other standard runners. The cost question is about private repositories and larger runners.</p></div>
+
+  <h2>When a job really needs macOS</h2>
+  <ul>
+    <li>Building or testing iOS, iPadOS, macOS, watchOS, or tvOS apps with <code>xcodebuild</code>, or anything that needs Xcode or the iOS Simulator.</li>
+    <li>Code signing and notarizing Mac software.</li>
+    <li>Swift code that imports Apple-only frameworks such as UIKit, AppKit, or SwiftUI.</li>
+    <li>CocoaPods installs and React Native or Flutter iOS builds.</li>
+    <li>Native code where macOS-specific behavior is the thing under test: file-system case-insensitivity, Mach-O linking, Homebrew formulas.</li>
+  </ul>
+
+  <h2>When it usually doesn't</h2>
+  <ul>
+    <li><b>Unit tests for a Node, Python, Go, or Rust library</b> that you also test on Linux. A macOS failure that Linux misses is real but rare. Catching it on pushes to <code>main</code> or on a nightly run is usually enough.</li>
+    <li><b>Linting, formatting, type checking, docs builds.</b> These don't depend on the OS at all.</li>
+    <li><b>Browser end-to-end tests "for Safari."</b> Playwright runs its WebKit engine on Linux, so a WebKit project doesn't need a Mac runner.</li>
+    <li><b>Swift packages that don't import Apple frameworks.</b> Swift runs on Linux, and a SwiftPM package can often build and test there.</li>
+  </ul>
+
+  <h2>Keep macOS off every pull request</h2>
+  <p>The common fix keeps full coverage but changes <em>when</em> the expensive cell runs. Pull requests test on Linux. Pushes to <code>main</code> and a weekly schedule test on both:</p>
+<pre><code>on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: "0 6 * * 1"
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: ${{ github.event_name == 'pull_request'
+              &amp;&amp; fromJSON('["ubuntu-latest"]')
+              || fromJSON('["ubuntu-latest", "macos-latest"]') }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: npm ci &amp;&amp; npm test</code></pre>
+  <p>If the macOS job is the slow, platform-specific one (an iOS build, say), give it a <code>paths</code> filter so it only runs when files it builds actually change.</p>
+
+  <h2>Find out first</h2>
+  <p>Before moving anything, check whether macOS is actually where the money goes. The <a href="/guides/github-actions-usage-report">detailed usage report</a> has a <code>sku</code> column, and rows with <code>actions_macos</code> are the Mac minutes. <a href="/">spendtron</a> sums them by workflow for you.</p>
+
+  <div class="cta">
+    <p><strong>See which of your workflows costs what.</strong></p>
+    <p>Drop GitHub's detailed usage report into <a href="/">spendtron</a> and get a chart by workflow and runner. It's read in your browser, nothing is uploaded, and it's free.</p>
+  </div>
+  <p class="foot">More guides: <a href="/guides/github-actions-runner-pricing">Runner pricing</a> · <a href="/guides/macos-runner-cost">macOS runner cost</a> · <a href="/guides/github-actions-usage-report">The usage report</a> · <a href="/guides/reduce-github-actions-minutes">Cutting minutes</a><br/>Rates and plan details from GitHub's documentation, checked November 2026. GitHub changes them; <a href="https://docs.github.com/en/billing/reference/actions-runner-pricing">its pricing page</a> is the authority.</p>
+  <script data-goatcounter="https://spendtron.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>

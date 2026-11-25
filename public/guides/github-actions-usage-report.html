@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>How to read GitHub&#x27;s Actions usage report — spendtron</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/favicon.ico" sizes="32x32" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <meta name="description" content="What each column in GitHub&#x27;s detailed usage report means, how gross, discount, and net amounts relate, and how to get cost per workflow." />
+  <link rel="canonical" href="https://spendtron.com/guides/github-actions-usage-report" />
+  <meta property="og:title" content="How to read GitHub&#x27;s Actions usage report" />
+  <meta property="og:description" content="What each column in GitHub&#x27;s detailed usage report means, how gross, discount, and net amounts relate, and how to get cost per workflow." />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://spendtron.com/guides/github-actions-usage-report" />
+  <style>
+    :root { --bg:#0d1117; --panel:#161b22; --border:#30363d; --text:#e6edf3; --muted:#8b949e; --accent:#3fb950; --accent2:#58a6ff; }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; max-width: 760px; margin: 0 auto; padding: 48px 24px 96px; }
+    a { color: var(--accent2); }
+    h1 { font-size: 34px; line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 8px; }
+    h2 { font-size: 22px; margin: 40px 0 8px; }
+    h3 { font-size: 17px; margin: 24px 0 4px; }
+    p, li { color: var(--muted); }
+    p { margin: 14px 0; }
+    b, strong { color: var(--text); }
+    ul, ol { padding-left: 22px; margin: 14px 0; }
+    li { margin: 8px 0; }
+    .eyebrow { color: var(--accent); font-size: 14px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 12px; }
+    .eyebrow a { color: var(--accent); text-decoration: none; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 15px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    th { color: var(--text); font-weight: 600; }
+    td { color: var(--muted); }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92em; }
+    pre { background: #010409; border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; overflow-x: auto; font-size: 13px; line-height: 1.5; }
+    .note { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; margin: 20px 0; }
+    .cta { margin-top: 40px; padding: 20px 24px; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; }
+    .cta p { margin: 6px 0; }
+    .foot { margin-top: 48px; font-size: 13px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="eyebrow"><a href="/">spendtron</a> · Guide</div>
+  <h1>How to read GitHub's Actions usage report</h1>
+  <p>GitHub's billing page shows what Actions cost in total. The usage report shows where it went, down to the workflow file. It's the most accurate cost data you can get, because it's GitHub's own billing figures, not an estimate.</p>
+
+  <h2>Summarized or detailed</h2>
+  <ul>
+    <li><b>The summarized report</b> covers up to a year, grouped without user or workflow.</li>
+    <li><b>The detailed report</b> covers up to 31 days and adds <code>username</code> and <code>workflow_path</code>. For per-workflow cost, it's the one you want.</li>
+  </ul>
+  <p>The REST API's usage endpoint returns summarized data only. For workflow paths, download the detailed report.</p>
+
+  <h2>Getting it</h2>
+  <ol>
+    <li>Open the billing usage (metered usage) page for your account or organization.</li>
+    <li>Click <b>Get usage report</b> at the top and pick the detailed report and date range.</li>
+    <li>Click <b>Email me the report</b>. The download link arrives by email and expires after 24 hours. You can request one report at a time.</li>
+  </ol>
+
+  <h2>The columns</h2>
+  <table><thead><tr><th class="">Column</th><th class="num">What it means</th></tr></thead><tbody><tr><td class=""><code>date</code></td><td class="num">The day the usage happened.</td></tr><tr><td class=""><code>product</code></td><td class="num">The product, such as Actions. Codespaces, Packages, and other products share the report.</td></tr><tr><td class=""><code>sku</code></td><td class="num">The runner or storage type, such as <code>actions_linux</code> or <code>actions_macos</code>. See <a href="/guides/github-actions-runner-pricing">runner pricing</a>.</td></tr><tr><td class=""><code>quantity</code></td><td class="num">How much was used, in the row's <code>unit_type</code>.</td></tr><tr><td class=""><code>unit_type</code></td><td class="num">Minutes for compute rows. Storage rows use a storage unit, so their quantity is not minutes.</td></tr><tr><td class=""><code>applied_cost_per_quantity</code></td><td class="num">The rate applied to each unit.</td></tr><tr><td class=""><code>gross_amount</code></td><td class="num">Usage at list price, before anything is discounted.</td></tr><tr><td class=""><code>discount_amount</code></td><td class="num">The part that isn't billed: included compute, free standard runners on public repositories, and self-hosted runners.</td></tr><tr><td class=""><code>net_amount</code></td><td class="num">What's billable: <code>gross_amount − discount_amount</code>.</td></tr><tr><td class=""><code>username</code></td><td class="num">Who triggered the usage. Detailed report only.</td></tr><tr><td class=""><code>organization</code></td><td class="num">The organization the usage belongs to.</td></tr><tr><td class=""><code>repository</code></td><td class="num">The repository.</td></tr><tr><td class=""><code>workflow_path</code></td><td class="num">The workflow file, such as <code>.github/workflows/ci.yml</code>. Detailed report only, and the column that makes per-workflow cost possible.</td></tr><tr><td class=""><code>cost_center_name</code></td><td class="num">The cost center, if your enterprise uses them.</td></tr></tbody></table>
+
+  <h2>Gross, discount, and net</h2>
+  <p>This is where most readings go wrong. <code>gross_amount</code> is what the usage would cost at list price. <code>discount_amount</code> takes out everything GitHub doesn't charge for. <code>net_amount</code> is what's left, and it's the number on the invoice.</p>
+  <p>That's why a busy public repository can show real gross dollars and a net of $0: standard runners there are free, and the whole gross amount shows up as discount. Included compute works the same way. The first $12, $18, or $300 a month, depending on plan, is discounted. Sort by gross and you see which workflow uses the most. Sort by net and you see what's actually billed.</p>
+
+  <h2>Things that trip people up</h2>
+  <ul>
+    <li><b>Storage rows aren't minutes.</b> Artifact and cache storage share the report with compute. Their quantity is in a storage unit, so adding the whole <code>quantity</code> column overstates minutes. Their dollars are real, though.</li>
+    <li><b>Many rows per workflow.</b> A workflow appears once per day, per SKU, per user. Sum by <code>repository</code> plus <code>workflow_path</code> to get one figure per workflow.</li>
+    <li><b>Same file name, different repos.</b> <code>.github/workflows/ci.yml</code> in twelve repositories is twelve workflows. Group by repository too.</li>
+    <li><b>Other products.</b> Filter <code>product</code> to Actions if you only care about CI.</li>
+  </ul>
+
+  <h2>Skip the spreadsheet</h2>
+  <p><a href="/">spendtron</a> does those sums in your browser. It groups by repository and workflow, ranks by net dollars (gross if everything nets to zero), names the top SKU for each workflow, and tells you whether the total is inside your plan's included compute. Nothing is uploaded.</p>
+
+  <div class="cta">
+    <p><strong>See which of your workflows costs what.</strong></p>
+    <p>Drop GitHub's detailed usage report into <a href="/">spendtron</a> and get a chart by workflow and runner. It's read in your browser, nothing is uploaded, and it's free.</p>
+  </div>
+  <p class="foot">More guides: <a href="/guides/github-actions-runner-pricing">Runner pricing</a> · <a href="/guides/macos-runner-cost">macOS runner cost</a> · <a href="/guides/github-actions-usage-report">The usage report</a> · <a href="/guides/reduce-github-actions-minutes">Cutting minutes</a><br/>Rates and plan details from GitHub's documentation, checked November 2026. GitHub changes them; <a href="https://docs.github.com/en/billing/reference/actions-runner-pricing">its pricing page</a> is the authority.</p>
+  <script data-goatcounter="https://spendtron.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>

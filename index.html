@@ -3,12 +3,15 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>spendtron — Price the Actions minute, then open the pull request</title>
+  <title>spendtron — Find the workflow running up your GitHub Actions bill</title>
   <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
   <link rel="icon" href="/favicon.ico" sizes="32x32" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="canonical" href="https://spendtron.com/" />
-  <meta name="description" content="Paste GitHub's Actions usage export and see which workflow costs what, at current runner rates, before you connect anything. The GitHub App opens the pull request." />
+  <meta name="description" content="Drop in GitHub's detailed usage report and see which workflow costs what, read in your browser with no account. Connect the GitHub App for a pull request that trims it. Free." />
+  <meta property="og:title" content="Find the workflow running up your GitHub Actions bill" />
+  <meta property="og:description" content="A free chart from GitHub's own usage report, and a pull request for the safe fixes." />
+  <meta property="og:url" content="https://spendtron.com/" />
   <style>
     :root {
       --bg: #0d1117; --panel: #161b22; --border: #30363d;
@@ -66,103 +69,98 @@
     .foot { color: var(--muted); font-size: 13px; margin-top: 56px; text-align: center; }
     textarea { width: 100%; min-height: 140px; margin: 8px 0 12px; background: #010409; color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; }
     button.btn { border: 0; cursor: pointer; font-family: inherit; }
+    .bar { display: grid; grid-template-columns: minmax(0, 1.5fr) minmax(80px, 1fr) 13.5em; gap: 12px; align-items: center; margin: 10px 0; font-size: 14px; }
+    .bar .label { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+    .track { height: 10px; background: #010409; border-radius: 99px; overflow: hidden; }
+    .fill { height: 100%; background: var(--accent); }
+    .val { color: var(--muted); font-variant-numeric: tabular-nums; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    @media (max-width: 560px) { .bar { grid-template-columns: 1fr 9.5em; } .bar .track { display: none; } }
+    .example-tag { display: inline-block; font-size: 12px; color: var(--muted); border: 1px solid var(--border); border-radius: 99px; padding: 2px 10px; margin-bottom: 14px; }
+    input[type=file] { color: var(--muted); margin: 8px 0; }
+    .guides { display: grid; grid-template-columns: repeat(auto-fit, minmax(240px, 1fr)); gap: 16px; }
+    .guides a.card { text-decoration: none; color: var(--text); }
+    .guides a.card:hover { border-color: var(--accent2); }
   </style>
 </head>
 <body>
-  <div class="wrap">
-    <div class="eyebrow">spendtron · GitHub Actions cost</div>
-    <h1>GitHub shows the workflow. spendtron prices the runner and opens the pull request.</h1>
-    <p class="sub">Paste the detailed usage export. The chart uses GitHub's own net dollars, before an install or an API key. Connect the app when you want a live job sample and a pull request for the safe edits.</p>
+<div class="wrap">
+<div class="eyebrow">spendtron · GitHub Actions cost</div>
+<h1>Find the workflow that's running up your GitHub Actions bill.</h1>
+<p class="sub">GitHub's billing page shows the total. spendtron breaks GitHub's own usage report down by workflow and runner, so you can see the one job eating the budget. Then it opens a pull request with the fixes that are safe to make. Free, and the report never leaves your browser.</p>
 
-    <div id="banner" class="stat" hidden></div>
+<div class="stat">
+<span class="example-tag">Example export · a made-up org, not customer data</span>
+<div class="bar"><div class="label">acme/ios-app · ui-tests.yml</div><div class="track"><div class="fill" style="width:100%"></div></div><div class="val">$214.60 · actions_macos</div></div>
+<div class="bar"><div class="label">acme/api · ci.yml</div><div class="track"><div class="fill" style="width:11%"></div></div><div class="val">$22.80 · linux_8_core</div></div>
+<div class="bar"><div class="label">acme/web · e2e.yml</div><div class="track"><div class="fill" style="width:4%"></div></div><div class="val">$9.40 · actions_linux</div></div>
+<div class="bar"><div class="label">acme/web · lint.yml</div><div class="track"><div class="fill" style="width:2%"></div></div><div class="val">$3.10 · actions_linux</div></div>
+<div class="bar"><div class="label">acme/docs · deploy.yml</div><div class="track"><div class="fill" style="width:2%"></div></div><div class="val">$2.50 · actions_linux</div></div>
+<p><b style="color:var(--text)">85%</b> of this $252.40 month is one iOS UI-test workflow on macOS, at $0.062 a minute, about ten times the Linux rate. That's the pattern spendtron is built to surface: one workflow, on one expensive runner, firing on every push.</p>
+</div>
 
-    <div class="stat">
-      <div class="big">36%</div>
-      <p>In an audit of my own public repos, one workflow was 36% of sampled compute. The actual Actions bill was about $0, because standard runners on public repositories are free. The shape is still the thing worth seeing. <a href="/blog/ci-audit-36-percent">Read the write-up</a>.</p>
-    </div>
+<h2>See your own chart in a minute</h2>
+<form method="post" action="/audit" id="audit-form">
+<input type="file" id="audit-file" accept=".csv,text/csv" />
+<textarea name="csv" id="audit-csv" placeholder="Or paste the CSV here. It needs workflow_path and net_amount."></textarea>
+<p id="audit-error" style="color:var(--text)"></p>
+<button class="btn" type="submit">Show the chart</button>
+</form>
+<p class="sub" style="font-size:15px;margin-top:16px">On GitHub's billing usage page, click <b>Get usage report</b> and choose the detailed report. GitHub emails a download link. The file is read in your browser and is not uploaded. If your net amount is inside your plan's included compute, the page says so, and the honest answer may be that there's nothing to save. <a href="/guides/github-actions-usage-report">How to read the report</a>.</p>
 
-    <h2>Start with the export</h2>
-    <form action="/audit" method="post">
-      <textarea name="csv" placeholder="Paste the detailed usage CSV. It needs workflow_path and net_amount." required></textarea>
-      <button class="btn" type="submit">Show the chart</button>
-    </form>
-    <p class="sub">GitHub → Settings → Billing and licensing → Usage → Get usage report → Detailed. The file is rendered and not stored. If the net amount is inside included compute, the page says the marginal invoice is likely $0.</p>
-
-    <h2>Then, if you want the pull request</h2>
-    <div class="paths">
-      <div class="card">
-        <h3>Connect GitHub</h3>
-        <p>The live sample bills each job at its runner SKU. macOS, larger runners, and parallel jobs add up. The chart is the next page, before the API key matters.</p>
-        <a class="btn" href="/github/install">Connect GitHub</a>
-      </div>
-      <div class="card">
-        <h3>Or run it in the repo</h3>
-        <p>A composite action writes the same ranking to the job summary, using the workflow token. No spendtron account.</p>
-        <pre><code>permissions:
+<h2>Then, if there's something to fix</h2>
+<div class="paths">
+<div class="card">
+<h3>Connect GitHub</h3>
+<p>The App samples recent jobs, prices each at its runner's current rate, and reads your workflow files. One click opens a pull request per repository with the safe edits.</p>
+<a class="btn" href="/github/install">Connect GitHub</a>
+</div>
+<div class="card">
+<h3>Or run it in the repo</h3>
+<p>A composite action writes the same ranking to the job summary and keeps one comment updated on the pull request, using the workflow's own token. No spendtron account.</p>
+<pre><code>permissions:
   actions: read
   pull-requests: write
 steps:
   - uses: swantron/spendtron/github-action@main</code></pre>
-      </div>
-    </div>
+</div>
+</div>
 
-    <h2>What the pull request will and will not change</h2>
-    <ul>
-      <li><b>It will apply</b> a timeout, cancel-in-progress on a workflow that is not a deploy, and a short public-repo job moving off a larger Linux runner.</li>
-      <li><b>It will describe</b> missing path filters, a matrix that multiplies the bill, a duplicate push and pull_request trigger, and a macOS runner with no Apple toolchain. Those edits change which jobs run, so they stay in the pull request body.</li>
-      <li><b>It will not shorten a healthy run</b> with timeout-minutes. That line is a hang guard, listed last.</li>
-    </ul>
+<h2>What the pull request will and will not change</h2>
+<ul>
+<li><b>It will apply</b> a timeout sized above your slowest run, cancel-in-progress for superseded pull-request runs on workflows that don't deploy, and a short public-repo job moving off a larger Linux runner.</li>
+<li><b>It will describe</b> missing path filters, a matrix that multiplies the bill, a duplicate push and pull_request trigger, and a macOS runner with no Apple toolchain. Those change which jobs run, so they're written up for you to decide.</li>
+<li><b>It will not touch</b> a workflow that looks like a deploy, or open a second pull request while one is still open.</li>
+</ul>
 
-    <h2>Price</h2>
-    <div class="price">
-      <div class="card">
-        <h3>Chart, sample, pull requests</h3>
-        <div class="amt">Free</div>
-        <p>The export, the live sample, and the pull requests you request. MCP reads the saved report.</p>
-      </div>
-      <div class="card">
-        <h3>Written audit</h3>
-        <div class="amt">Quote</div>
-        <p>When the export or the run-rate is about $200 or more, email <a href="mailto:joe@swantron.com">joe@swantron.com</a>. Below that, included compute often means the invoice is already $0.</p>
-      </div>
-    </div>
+<h2>Guides</h2>
+<div class="guides">
+<a class="card" href="/guides/github-actions-runner-pricing"><h3>Runner pricing</h3><p>Every GitHub-hosted runner's per-minute rate, what's free on public repos, and what each plan includes.</p></a>
+<a class="card" href="/guides/macos-runner-cost"><h3>Why macOS costs 10×</h3><p>When a job really needs a Mac, and how to keep it off every pull request when it doesn't.</p></a>
+<a class="card" href="/guides/github-actions-usage-report"><h3>The usage report</h3><p>Gross, discount, and net, what each column means, and why storage rows aren't minutes.</p></a>
+<a class="card" href="/guides/reduce-github-actions-minutes"><h3>Cutting minutes</h3><p>Path filters, concurrency, matrix width, and duplicate triggers, in the order they usually pay off.</p></a>
+</div>
 
-    <p class="foot">spendtron · <a href="/audit">Billing export</a> · <a href="/github/install">Connect GitHub</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></p>
-  </div>
-  <script>
-    (function () {
-      var el = document.getElementById("mcp-cmd");
-      if (el && location.protocol.indexOf("http") === 0) {
-        el.textContent = el.textContent.replace("https://spendtron.com", location.origin);
-      }
-      var params = new URLSearchParams(location.search);
-      var banner = document.getElementById("banner");
-      if (!banner) return;
-      var status = params.get("subscribed") || params.get("unlocked");
-      var isUnlock = params.has("unlocked");
-      if (status === "success") {
-        banner.hidden = false;
-        var sid = params.get("session_id");
-        banner.innerHTML = isUnlock
-          ? "<p>Fix diffs unlocked — every future audit includes the full list. " +
-            (sid
-              ? "<a href=\"/billing/portal?session_id=" + encodeURIComponent(sid) + "\">View receipt</a></p>"
-              : "Check your email for the receipt.</p>")
-          : (sid
-              ? "<p>Subscription active. <a href=\"/billing/portal?session_id=" + encodeURIComponent(sid) + "\">Manage billing</a></p>"
-              : "<p>Subscription active. Manage billing from the receipt Stripe emailed you.</p>");
-      } else if (status === "cancelled") {
-        banner.hidden = false;
-        banner.innerHTML = isUnlock
-          ? "<p>Checkout cancelled. The ranking and one free fix are still yours anytime.</p>"
-          : "<p>Checkout cancelled. You can subscribe anytime after your free audit.</p>";
-      } else if (status === "unavailable") {
-        banner.hidden = false;
-        banner.innerHTML = "<p>Billing is not configured on this host. Email joe@swantron.com.</p>";
-      }
-    })();
-  </script>
-  <script data-goatcounter="https://spendtron.goatcounter.com/count"
-          async src="//gc.zgo.at/count.js"></script>
+<h2>Price</h2>
+<div class="price">
+<div class="card">
+<h3>Chart, sample, pull requests</h3>
+<div class="amt">Free</div>
+<p>The usage-report chart, the live sample, and the pull requests you ask for. MCP clients can read the saved report too.</p>
+</div>
+<div class="card">
+<h3>Written audit</h3>
+<div class="amt">Quote</div>
+<p>When the export or the run-rate is about $200 a month or more, email <a href="mailto:joe@swantron.com">joe@swantron.com</a>. Below that, included compute often means the invoice is already $0.</p>
+</div>
+</div>
+
+<p class="sub" style="font-size:15px;margin-top:40px">Background: <a href="/blog/ci-audit-36-percent">one workflow was 36% of my own CI compute</a>. My repos are public, so the real bill was about $0, but the shape was the same.</p>
+
+<p class="foot">spendtron · <a href="/audit">Usage report</a> · <a href="/guides/github-actions-runner-pricing">Runner pricing</a> · <a href="/github/install">Connect GitHub</a> · <a href="/login">Sign in</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></p>
+</div>
+<script src="/audit.js"></script>
+<script src="/audit-form.js"></script>
+<script data-goatcounter="https://spendtron.goatcounter.com/count"
+        async src="//gc.zgo.at/count.js"></script>
 </body>
 </html>

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>How to cut GitHub Actions minutes — spendtron</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/favicon.ico" sizes="32x32" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <meta name="description" content="Ways to lower GitHub Actions minutes, ordered by typical payoff: runner choice, path filters, concurrency, duplicate triggers, matrix width, job rounding, caching, and timeouts." />
+  <link rel="canonical" href="https://spendtron.com/guides/reduce-github-actions-minutes" />
+  <meta property="og:title" content="How to cut GitHub Actions minutes" />
+  <meta property="og:description" content="Ways to lower GitHub Actions minutes, ordered by typical payoff: runner choice, path filters, concurrency, duplicate triggers, matrix width, job rounding, caching, and timeouts." />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://spendtron.com/guides/reduce-github-actions-minutes" />
+  <style>
+    :root { --bg:#0d1117; --panel:#161b22; --border:#30363d; --text:#e6edf3; --muted:#8b949e; --accent:#3fb950; --accent2:#58a6ff; }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; max-width: 760px; margin: 0 auto; padding: 48px 24px 96px; }
+    a { color: var(--accent2); }
+    h1 { font-size: 34px; line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 8px; }
+    h2 { font-size: 22px; margin: 40px 0 8px; }
+    h3 { font-size: 17px; margin: 24px 0 4px; }
+    p, li { color: var(--muted); }
+    p { margin: 14px 0; }
+    b, strong { color: var(--text); }
+    ul, ol { padding-left: 22px; margin: 14px 0; }
+    li { margin: 8px 0; }
+    .eyebrow { color: var(--accent); font-size: 14px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 12px; }
+    .eyebrow a { color: var(--accent); text-decoration: none; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 15px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    th { color: var(--text); font-weight: 600; }
+    td { color: var(--muted); }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92em; }
+    pre { background: #010409; border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; overflow-x: auto; font-size: 13px; line-height: 1.5; }
+    .note { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; margin: 20px 0; }
+    .cta { margin-top: 40px; padding: 20px 24px; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; }
+    .cta p { margin: 6px 0; }
+    .foot { margin-top: 48px; font-size: 13px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="eyebrow"><a href="/">spendtron</a> · Guide</div>
+  <h1>How to cut GitHub Actions minutes, in the order it usually pays off</h1>
+  <p>Most CI bills have a few big causes, not many small ones: one expensive runner, or one workflow firing far more often than it needs to. So measure first, then work down this list from the top. Each item says what it saves and what it risks.</p>
+
+  <h2>0. Find the expensive workflow</h2>
+  <p>Get the <a href="/guides/github-actions-usage-report">detailed usage report</a> and rank by workflow. It's common for one workflow to be a third or more of everything. Fix that one before touching the rest.</p>
+
+  <h2>1. Put expensive runners only where they're needed</h2>
+  <p>A macOS minute costs about 10× a Linux minute, and larger runners cost about 2× to 90× the 2-core Linux rate (<a href="/guides/github-actions-runner-pricing">full table</a>). Moving one job off the wrong runner often beats every other change combined. See <a href="/guides/macos-runner-cost">keeping macOS off every pull request</a>. On public repositories, standard runners are free but larger runners are not, so a short job on an 8-core runner there is pure cost.</p>
+
+  <h2>2. Don't run the workflow for changes it can't affect</h2>
+  <p>A docs-only commit shouldn't run the full test suite. Add a path filter:</p>
+<pre><code>on:
+  push:
+    branches: [main]
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"
+  pull_request:
+    paths-ignore:
+      - "**/*.md"
+      - "docs/**"</code></pre>
+  <p><b>Risk:</b> if branch protection requires this workflow's checks, a skipped run can leave a pull request waiting on a check that never reports. Check your required checks before filtering a required workflow.</p>
+
+  <h2>3. Cancel runs that a newer push replaced</h2>
+  <p>Push three times to a pull request and, by default, all three runs finish. Only the last one matters.</p>
+<pre><code>concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}</code></pre>
+  <p>Cancelling only on <code>pull_request</code> means a push to <code>main</code> always finishes. Don't add this to a workflow that deploys: cancelling a deploy partway can leave it half-applied.</p>
+
+  <h2>4. Stop running the same commit twice</h2>
+  <p>A workflow with both <code>push</code> and <code>pull_request</code> and no branch filter runs twice for every push to a pull request's branch. Limit <code>push</code> to the branches you merge into:</p>
+<pre><code>on:
+  push:
+    branches: [main]
+  pull_request:</code></pre>
+
+  <h2>5. Narrow the matrix on pull requests</h2>
+  <p>Each matrix cell is a separate job, billed separately and rounded up separately. Three OS versions × four language versions is twelve jobs on every push. Pull requests usually need the newest and oldest supported versions on Linux. The full grid can run on <code>main</code> or on a schedule.</p>
+
+  <h2>6. Merge tiny jobs</h2>
+  <p>Each job rounds up to a whole minute. A lint job that takes 12 seconds bills a minute, and so do the format check and type check next to it. If they share a setup, run them as steps in one job.</p>
+
+  <h2>7. Cache what you download every run</h2>
+  <p>Browser installs are the classic case. <code>npx playwright install</code> can take a minute every run. Cache <code>~/.cache/ms-playwright</code>, keyed on your lockfile, with <code>actions/cache</code>. Cypress caches to <code>~/.cache/Cypress</code>. Most <code>setup-*</code> actions can also cache package downloads with their <code>cache:</code> input.</p>
+
+  <h2>8. Set a timeout</h2>
+  <p><code>timeout-minutes</code> doesn't make a healthy run any shorter. It caps a hung job, which otherwise bills until GitHub's six-hour default limit. Set it comfortably above your slowest normal run, around 1.5× to 3×, so it never cuts off a real build.</p>
+
+  <h2>Before you start</h2>
+  <p>Check whether there's money to save. If your month's net usage is inside your plan's included compute ($12, $18, or $300, depending on plan), the invoice is already $0 and these changes buy speed, not savings. That can still be worth it. Just know which one you're doing.</p>
+
+  <div class="cta">
+    <p><strong>See which of your workflows costs what.</strong></p>
+    <p>Drop GitHub's detailed usage report into <a href="/">spendtron</a> and get a chart by workflow and runner. It's read in your browser, nothing is uploaded, and it's free.</p>
+  </div>
+  <p class="foot">More guides: <a href="/guides/github-actions-runner-pricing">Runner pricing</a> · <a href="/guides/macos-runner-cost">macOS runner cost</a> · <a href="/guides/github-actions-usage-report">The usage report</a> · <a href="/guides/reduce-github-actions-minutes">Cutting minutes</a><br/>Rates and plan details from GitHub's documentation, checked November 2026. GitHub changes them; <a href="https://docs.github.com/en/billing/reference/actions-runner-pricing">its pricing page</a> is the authority.</p>
+  <script data-goatcounter="https://spendtron.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>

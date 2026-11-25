@@ -719,6 +719,47 @@ function fakeOctokit({ repos, runs, jobs }) {
   const noChange = await openFixPullRequests(prOctokit, prReport);
   assert(noChange.errors.length === 1 && calls.includes("deleteRef"), "an unused branch is deleted");
 
+  console.log("\nSite content:");
+  const rates = require("./lib/runnerRates");
+  const pricingGuide = fs.readFileSync("./public/guides/github-actions-runner-pricing.html", "utf8");
+  const guideRates = new Map(
+    [...pricingGuide.matchAll(/<code>([a-z0-9_]+)<\/code><\/td><td class="num">\$([0-9.]+)<\/td>/g)].map((m) => [m[1], Number(m[2])]),
+  );
+  let mismatched = [];
+  for (const table of [rates.LINUX_X64_LARGER, rates.LINUX_ARM_LARGER, rates.WINDOWS_X64_LARGER, rates.WINDOWS_ARM_LARGER]) {
+    for (const [sku, usd] of Object.values(table)) {
+      if (guideRates.get(sku) !== usd) mismatched.push(`${sku}: code ${usd}, guide ${guideRates.get(sku)}`);
+    }
+  }
+  const standardChecks = [
+    [["ubuntu-latest"], "actions_linux"],
+    [["ubuntu-slim"], "actions_linux_slim"],
+    [["ubuntu-24.04-arm"], "actions_linux_arm"],
+    [["windows-latest"], "actions_windows"],
+    [["windows-11-arm"], "actions_windows_arm"],
+    [["macos-latest"], "actions_macos"],
+    [["macos-latest-xlarge"], "macos_xl"],
+    [["macos-latest-large"], "macos_l"],
+  ];
+  for (const [labels, sku] of standardChecks) {
+    const rate = rates.classifyRunner(labels, { visibility: "private" });
+    if (rate.sku !== sku || guideRates.get(sku) !== rate.usdPerMinute) {
+      mismatched.push(`${labels[0]}: code ${rate.sku} ${rate.usdPerMinute}, guide ${guideRates.get(sku)}`);
+    }
+  }
+  assert(guideRates.size >= 30 && mismatched.length === 0, `pricing guide matches runnerRates (${mismatched.join("; ") || "all match"})`);
+  assert(rates.classifyRunner(["windows-11-arm"]).usdPerMinute === 0.01, "standard Windows arm64 is $0.010");
+
+  const home = fs.readFileSync("./index.html", "utf8");
+  assert(home.includes('id="audit-form"') && home.includes("/audit-form.js"), "homepage uses the in-browser usage report form");
+  assert(!/subscribed|unlocked|Subscription active/.test(home), "homepage has no leftover Stripe banner");
+  assert(!home.includes("not stored"), "homepage does not claim the old server-side handling");
+  const sitemap = fs.readFileSync("./public/sitemap.xml", "utf8");
+  for (const guide of fs.readdirSync("./public/guides")) {
+    const slug = guide.replace(/\.html$/, "");
+    assert(sitemap.includes(`/guides/${slug}<`) && home.includes(`/guides/${slug}"`), `guide ${slug} is in the sitemap and linked from the homepage`);
+  }
+
   const body = Buffer.from("{}");
   const secret = "whsec";
   const signature = `sha256=${crypto.createHmac("sha256", secret).update(body).digest("hex")}`;

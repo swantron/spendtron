@@ -1,6 +1,6 @@
 # spendtron
 
-> spendtron prices GitHub Actions jobs at current per-runner rates. Paste a detailed usage CSV for a chart with no account. Connect the GitHub App for a live sample and a pull request. The chart and the pull requests are free.
+> spendtron prices GitHub Actions jobs at current per-runner rates. Load GitHub's detailed usage report for a chart with no account; it is read in the browser and not uploaded. Connect the GitHub App for a live sample and a pull request. The chart and the pull requests are free.
 
 ## Connect
 
@@ -14,8 +14,8 @@
 
 ## Access and pricing
 
-- Upload a detailed usage CSV at `/audit`. It is not stored.
-- GitHub App: Actions read, Metadata read, Contents and Pull requests read and write. Write is used only when you submit the pull-request button. A shared report link cannot open pull requests.
+- Load a detailed usage report at `/` or `/audit`. With JavaScript it is parsed in the browser and never sent to the server.
+- GitHub App: Actions read, Metadata read, Contents, Pull requests, and Workflows read and write. Write is used only when you submit the pull-request button. A shared report link cannot open pull requests.
 - The chart, the sample, and those pull requests are free. A written audit is quoted separately when the figure is about $200 or more.
 - In-repo action: `swantron/spendtron/github-action`.
 
@@ -24,5 +24,10 @@
 - Home: https://spendtron.com/
 - Audit write-up (812 runs, one workflow was 36% of compute): https://spendtron.com/blog/ci-audit-36-percent
 - Install the GitHub App: https://spendtron.com/github/install
+- Sign in (returning users): https://spendtron.com/login
+- Guide, runner pricing for every SKU: https://spendtron.com/guides/github-actions-runner-pricing
+- Guide, why macOS runners cost about 10x Linux: https://spendtron.com/guides/macos-runner-cost
+- Guide, reading the detailed usage report: https://spendtron.com/guides/github-actions-usage-report
+- Guide, cutting Actions minutes: https://spendtron.com/guides/reduce-github-actions-minutes
 - Privacy: https://spendtron.com/privacy
 - Terms: https://spendtron.com/terms

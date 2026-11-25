@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GitHub Actions runner pricing, every SKU — spendtron</title>
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/favicon.ico" sizes="32x32" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <meta name="description" content="Per-minute prices for every GitHub-hosted Actions runner (Linux, Windows, macOS, arm64, larger, and GPU), what&#x27;s free on public repos, and each plan&#x27;s included compute." />
+  <link rel="canonical" href="https://spendtron.com/guides/github-actions-runner-pricing" />
+  <meta property="og:title" content="GitHub Actions runner pricing, every SKU" />
+  <meta property="og:description" content="Per-minute prices for every GitHub-hosted Actions runner (Linux, Windows, macOS, arm64, larger, and GPU), what&#x27;s free on public repos, and each plan&#x27;s included compute." />
+  <meta property="og:type" content="article" />
+  <meta property="og:url" content="https://spendtron.com/guides/github-actions-runner-pricing" />
+  <style>
+    :root { --bg:#0d1117; --panel:#161b22; --border:#30363d; --text:#e6edf3; --muted:#8b949e; --accent:#3fb950; --accent2:#58a6ff; }
+    * { box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", system-ui, sans-serif; background: var(--bg); color: var(--text); line-height: 1.7; max-width: 760px; margin: 0 auto; padding: 48px 24px 96px; }
+    a { color: var(--accent2); }
+    h1 { font-size: 34px; line-height: 1.2; letter-spacing: -0.02em; margin-bottom: 8px; }
+    h2 { font-size: 22px; margin: 40px 0 8px; }
+    h3 { font-size: 17px; margin: 24px 0 4px; }
+    p, li { color: var(--muted); }
+    p { margin: 14px 0; }
+    b, strong { color: var(--text); }
+    ul, ol { padding-left: 22px; margin: 14px 0; }
+    li { margin: 8px 0; }
+    .eyebrow { color: var(--accent); font-size: 14px; font-weight: 600; letter-spacing: .04em; text-transform: uppercase; margin-bottom: 12px; }
+    .eyebrow a { color: var(--accent); text-decoration: none; }
+    table { width: 100%; border-collapse: collapse; margin: 14px 0; font-size: 15px; }
+    th, td { text-align: left; padding: 8px 10px; border-bottom: 1px solid var(--border); }
+    th { color: var(--text); font-weight: 600; }
+    td { color: var(--muted); }
+    td.num, th.num { text-align: right; font-variant-numeric: tabular-nums; }
+    code { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 0.92em; }
+    pre { background: #010409; border: 1px solid var(--border); border-radius: 8px; padding: 12px 14px; overflow-x: auto; font-size: 13px; line-height: 1.5; }
+    .note { background: var(--panel); border: 1px solid var(--border); border-radius: 12px; padding: 16px 20px; margin: 20px 0; }
+    .cta { margin-top: 40px; padding: 20px 24px; background: var(--panel); border: 1px solid var(--border); border-radius: 12px; }
+    .cta p { margin: 6px 0; }
+    .foot { margin-top: 48px; font-size: 13px; color: var(--muted); }
+  </style>
+</head>
+<body>
+  <div class="eyebrow"><a href="/">spendtron</a> · Guide</div>
+  <h1>GitHub Actions runner pricing, every SKU</h1>
+  <p>GitHub bills Actions by the minute, at a rate set by the runner a job lands on. The rate spread is wide: the cheapest hosted runner is $0.002 a minute and the most expensive is $0.552. Which runner your jobs use matters more than almost anything else in the workflow file.</p>
+
+  <h2>How a minute is counted</h2>
+  <ul>
+    <li><b>Per job, rounded up.</b> GitHub rounds each job's minutes up to the next whole minute. Eight 10-second jobs bill 8 minutes, not 2. A workflow that fans out into many tiny jobs pays the rounding on each one.</li>
+    <li><b>Parallel jobs add up.</b> Ten jobs running side by side for 5 minutes each bill about 50 minutes, even though the run finished in 5.</li>
+    <li><b>No OS multiplier.</b> Each minute is charged at its runner's own rate: $0.010 for a Windows minute, $0.062 for a macOS minute.</li>
+  </ul>
+
+  <h2>Standard runners</h2>
+  <p>These are what <code>ubuntu-latest</code>, <code>windows-latest</code>, and <code>macos-latest</code> give you.</p>
+  <table><thead><tr><th class="">Runner</th><th class="">SKU</th><th class="num">Per minute</th></tr></thead><tbody><tr><td class="">Linux 1-core (x64)</td><td class=""><code>actions_linux_slim</code></td><td class="num">$0.002</td></tr><tr><td class="">Linux 2-core (x64)</td><td class=""><code>actions_linux</code></td><td class="num">$0.006</td></tr><tr><td class="">Linux 2-core (arm64)</td><td class=""><code>actions_linux_arm</code></td><td class="num">$0.005</td></tr><tr><td class="">Windows 2-core (x64)</td><td class=""><code>actions_windows</code></td><td class="num">$0.010</td></tr><tr><td class="">Windows 2-core (arm64)</td><td class=""><code>actions_windows_arm</code></td><td class="num">$0.010</td></tr><tr><td class="">macOS 3- or 4-core (M1 or Intel)</td><td class=""><code>actions_macos</code></td><td class="num">$0.062</td></tr></tbody></table>
+  <div class="note"><p><strong>Public repositories:</strong> standard runners are free. <strong>Self-hosted runners</strong> are free on GitHub's compute line too; you pay for your own machines.</p></div>
+
+  <h2>Larger runners</h2>
+  <p>Larger runners are available to organizations and enterprises on GitHub Team or Enterprise Cloud. <strong>They are not free on public repositories.</strong> A public repo that moves a job onto an 8-core runner starts paying for it.</p>
+  <h3>Linux x64</h3>
+  <table><thead><tr><th class="">Runner</th><th class="">SKU</th><th class="num">Per minute</th></tr></thead><tbody><tr><td class="">Linux Advanced 2-core</td><td class=""><code>linux_2_core_advanced</code></td><td class="num">$0.006</td></tr><tr><td class="">Linux 4-core</td><td class=""><code>linux_4_core</code></td><td class="num">$0.012</td></tr><tr><td class="">Linux 8-core</td><td class=""><code>linux_8_core</code></td><td class="num">$0.022</td></tr><tr><td class="">Linux 16-core</td><td class=""><code>linux_16_core</code></td><td class="num">$0.042</td></tr><tr><td class="">Linux 32-core</td><td class=""><code>linux_32_core</code></td><td class="num">$0.082</td></tr><tr><td class="">Linux 64-core</td><td class=""><code>linux_64_core</code></td><td class="num">$0.162</td></tr><tr><td class="">Linux 96-core</td><td class=""><code>linux_96_core</code></td><td class="num">$0.252</td></tr></tbody></table>
+  <h3>Linux arm64</h3>
+  <table><thead><tr><th class="">Runner</th><th class="">SKU</th><th class="num">Per minute</th></tr></thead><tbody><tr><td class="">Linux 2-core arm64</td><td class=""><code>linux_2_core_arm</code></td><td class="num">$0.005</td></tr><tr><td class="">Linux 4-core arm64</td><td class=""><code>linux_4_core_arm</code></td><td class="num">$0.008</td></tr><tr><td class="">Linux 8-core arm64</td><td class=""><code>linux_8_core_arm</code></td><td class="num">$0.014</td></tr><tr><td class="">Linux 16-core arm64</td><td class=""><code>linux_16_core_arm</code></td><td class="num">$0.026</td></tr><tr><td class="">Linux 32-core arm64</td><td class=""><code>linux_32_core_arm</code></td><td class="num">$0.050</td></tr><tr><td class="">Linux 64-core arm64</td><td class=""><code>linux_64_core_arm</code></td><td class="num">$0.098</td></tr></tbody></table>
+  <h3>Windows x64</h3>
+  <table><thead><tr><th class="">Runner</th><th class="">SKU</th><th class="num">Per minute</th></tr></thead><tbody><tr><td class="">Windows 4-core</td><td class=""><code>windows_4_core</code></td><td class="num">$0.022</td></tr><tr><td class="">Windows 8-core</td><td class=""><code>windows_8_core</code></td><td class="num">$0.042</td></tr><tr><td class="">Windows 16-core</td><td class=""><code>windows_16_core</code></td><td class="num">$0.082</td></tr><tr><td class="">Windows 32-core</td><td class=""><code>windows_32_core</code></td><td class="num">$0.162</td></tr><tr><td class="">Windows 64-core</td><td class=""><code>windows_64_core</code></td><td class="num">$0.322</td></tr><tr><td class="">Windows 96-core</td><td class=""><code>windows_96_core</code></td><td class="num">$0.552</td></tr></tbody></table>
+  <h3>Windows arm64</h3>
+  <table><thead><tr><th class="">Runner</th><th class="">SKU</th><th class="num">Per minute</th></tr></thead><tbody><tr><td class="">Windows 2-core arm64</td><td class=""><code>windows_2_core_arm</code></td><td class="num">$0.008</td></tr><tr><td class="">Windows 4-core arm64</td><td class=""><code>windows_4_core_arm</code></td><td class="num">$0.014</td></tr><tr><td class="">Windows 8-core arm64</td><td class=""><code>windows_8_core_arm</code></td><td class="num">$0.026</td></tr><tr><td class="">Windows 16-core arm64</td><td class=""><code>windows_16_core_arm</code></td><td class="num">$0.050</td></tr><tr><td class="">Windows 32-core arm64</td><td class=""><code>windows_32_core_arm</code></td><td class="num">$0.098</td></tr><tr><td class="">Windows 64-core arm64</td><td class=""><code>windows_64_core_arm</code></td><td class="num">$0.194</td></tr></tbody></table>
+  <h3>macOS</h3>
+  <table><thead><tr><th class="">Runner</th><th class="">SKU</th><th class="num">Per minute</th></tr></thead><tbody><tr><td class="">macOS 12-core</td><td class=""><code>macos_l</code></td><td class="num">$0.077</td></tr><tr><td class="">macOS 5-core (M2 Pro)</td><td class=""><code>macos_xl</code></td><td class="num">$0.102</td></tr></tbody></table>
+  <h3>GPU</h3>
+  <table><thead><tr><th class="">Runner</th><th class="">SKU</th><th class="num">Per minute</th></tr></thead><tbody><tr><td class="">Linux 4-core GPU</td><td class=""><code>linux_4_core_gpu</code></td><td class="num">$0.052</td></tr><tr><td class="">Windows 4-core GPU</td><td class=""><code>windows_4_core_gpu</code></td><td class="num">$0.102</td></tr></tbody></table>
+  <p>Custom images run at the larger-runner rates, plus custom-image storage.</p>
+
+  <h2>What each plan includes</h2>
+  <p>Included compute is a dollar amount per month, spent at the runner's own rate. On the 2-core Linux runner, $300 covers 50,000 minutes. On macOS, the same $300 covers under 5,000.</p>
+  <table><thead><tr><th class="">Plan</th><th class="">Artifact storage</th><th class="num">Included compute / month</th></tr></thead><tbody><tr><td class="">GitHub Free</td><td class="">500 MB</td><td class="num">$12</td></tr><tr><td class="">GitHub Pro</td><td class="">1 GB</td><td class="num">$18</td></tr><tr><td class="">GitHub Free for organizations</td><td class="">500 MB</td><td class="num">$12</td></tr><tr><td class="">GitHub Team</td><td class="">2 GB</td><td class="num">$18</td></tr><tr><td class="">GitHub Enterprise Cloud</td><td class="">50 GB</td><td class="num">$300</td></tr></tbody></table>
+  <p>On Team and Enterprise Cloud, larger runners can draw from included compute too. Every plan gets 10 GB of Actions cache per repository.</p>
+  <p>If a month's Actions usage fits inside those numbers, the invoice line is $0, and tuning workflows saves time, not money. <a href="/guides/github-actions-usage-report">The detailed usage report</a> shows which case you're in.</p>
+
+  <div class="cta">
+    <p><strong>See which of your workflows costs what.</strong></p>
+    <p>Drop GitHub's detailed usage report into <a href="/">spendtron</a> and get a chart by workflow and runner. It's read in your browser, nothing is uploaded, and it's free.</p>
+  </div>
+  <p class="foot">More guides: <a href="/guides/github-actions-runner-pricing">Runner pricing</a> · <a href="/guides/macos-runner-cost">macOS runner cost</a> · <a href="/guides/github-actions-usage-report">The usage report</a> · <a href="/guides/reduce-github-actions-minutes">Cutting minutes</a><br/>Rates and plan details from GitHub's documentation, checked November 2026. GitHub changes them; <a href="https://docs.github.com/en/billing/reference/actions-runner-pricing">its pricing page</a> is the authority.</p>
+  <script data-goatcounter="https://spendtron.goatcounter.com/count" async src="//gc.zgo.at/count.js"></script>
+</body>
+</html>
