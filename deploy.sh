@@ -6,12 +6,21 @@ set -e
 
 echo "Deploying spendtron to Cloud Run..."
 
+# Reports are cached, so the service still scales to zero. Memory and the
+# request timeout are sized for the first /report sample, which is the
+# request that talks to GitHub. MCP reads the cache.
+TAG="${1:-latest}"
+
 gcloud run deploy spendtron \
-  --image us-central1-docker.pkg.dev/spendtron/spendtron-repo/spendtron:latest \
+  --image "us-central1-docker.pkg.dev/spendtron/spendtron-repo/spendtron:${TAG}" \
   --region us-central1 \
   --platform managed \
   --allow-unauthenticated \
-  --update-secrets GITHUB_APP_PRIVATE_KEY=github-app-private-key:latest,DATABASE_URL=database-url:latest,STRIPE_SECRET_KEY=stripe-secret-key:latest,STRIPE_WEBHOOK_SECRET=stripe-webhook-secret:latest \
+  --memory 1Gi \
+  --cpu 1 \
+  --timeout 300 \
+  --concurrency 8 \
+  --update-secrets GITHUB_APP_PRIVATE_KEY=github-app-private-key:latest,GITHUB_APP_CLIENT_ID=github-app-client-id:latest,GITHUB_APP_CLIENT_SECRET=github-app-client-secret:latest,DATABASE_URL=database-url:latest,STRIPE_SECRET_KEY=stripe-secret-key:latest,STRIPE_WEBHOOK_SECRET=stripe-webhook-secret:latest \
   --update-env-vars GITHUB_APP_ID=4973136,GITHUB_APP_SLUG=spendtron-app,STRIPE_PRICE_ID=price_1UGW1WBrLbOy8fj4N5Nk1xFc,STRIPE_PORTAL_CONFIG_ID=bpc_1UHcidBrLbOy8fj4QGc993LX,STRIPE_UNLOCK_PRICE_ID=price_1UIt4oBrLbOy8fj45POAaHxL,APP_BASE_URL=https://spendtron.com \
   --quiet
 

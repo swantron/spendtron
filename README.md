@@ -1,8 +1,23 @@
 # spendtron
 
-A read-only tool that finds which GitHub Actions workflow is eating your CI bill, ranks workflows and repos by real compute cost, and suggests pasteable fix diffs (missing cache, missing `timeout-minutes`) confirmed against real run timing — not estimates.
+Prices GitHub Actions jobs at current per-runner rates and opens a pull request for the edits that are safe to apply.
 
-Delivered as an **MCP server** — call `check_actions_cost` from Claude, ChatGPT, or any MCP-compatible client, no dashboard required. Auth is a GitHub App (read-only: Actions + Contents + Metadata) plus a spendtron API key, passed as a bearer token. The cost ranking and one confirmed fix diff are free on every call. Unlocking the full fix list is a one-time $39 payment via Stripe — not a subscription.
+Paste a detailed usage CSV at `/audit` and the chart renders immediately. Nothing is stored. Connect the GitHub App when you want a live sample: each job is billed at its SKU, parallel jobs add, and the same workflow name in two repositories stays two rows. The report page is the next screen after install. MCP reads that saved report and does not crawl GitHub on the tool call.
+
+The chart, the sample, and pull requests you request are free. A written audit is a quote when the figure is about $200 or more (`joe@swantron.com`). The pull request applies timeouts, cancel-in-progress on non-deploy workflows, and a short public-repo job leaving a larger Linux runner. Path filters, matrix fanout, and macOS runners are described in the pull request and left for you to edit.
+
+There is also a composite action at `github-action/` (`uses: swantron/spendtron/github-action@main`) that writes the same ranking for one repository into the job summary. On `pull_request` it also keeps one comment on the pull request up to date. The job needs:
+
+```yaml
+permissions:
+  actions: read        # list runs and jobs
+  contents: read
+  pull-requests: write # the comment; leave it out to get the job summary only
+steps:
+  - uses: swantron/spendtron/github-action@main
+```
+
+Pull requests from forks get a read-only token, so they get the job summary and no comment.
 
 The underlying audit logic started as `~/code/ci-audit/actions-teardown.sh` (bash + `gh api`) — `lib/auditActions.js` is the same algorithm, ported to run per-installation against many customers' orgs instead of one local `gh`-authenticated user.
 
@@ -15,12 +30,13 @@ The GitHub App must be **public** (GitHub → spendtron-app → Advanced → Mak
 ## Setup
 
 1. Copy `.env.example` to `.env.local` (or set these in Cloud Run's Secret Manager for prod).
-2. Create a GitHub App at github.com/settings/apps/new — slug **`spendtron-app`**, permissions: **Actions: Read-only**, **Contents: Read-only**, **Metadata: Read-only**. Callback URL: `<your deployed host>/github/callback`. Make the App public before sending customers to `/github/install`.
-3. Create a Neon Postgres database, run `db/schema.sql` against it.
-4. Create a one-time Stripe Price (not recurring) for the fix-diff unlock; put its ID in `STRIPE_UNLOCK_PRICE_ID`. Point a Stripe webhook at `/stripe/webhook` for `checkout.session.completed`. (`STRIPE_PRICE_ID` and the Customer Portal are legacy from an earlier $99/mo model — no longer wired into any live checkout flow.)
-5. Map both `spendtron.com` and `www.spendtron.com` to the Cloud Run service (www should CNAME to `ghs.googlehosted.com` at Squarespace). The app 301s www → apex.
-6. Privacy / terms for Stripe: `https://spendtron.com/privacy` and `https://spendtron.com/terms`.
-7. `npm install && npm start`.
+2. Create a GitHub App at github.com/settings/apps/new — slug **`spendtron-app`**, permissions: **Actions: Read-only**, **Contents: Read and write**, **Pull requests: Read and write**, **Metadata: Read-only**. Contents and Pull requests write are what the report button uses to open a pull request. Without them the chart still works and the button returns GitHub's 403. Set both the user-authorization **Callback URL** and the **Setup URL** to `<your deployed host>/github/callback`, and enable **Redirect on update**. Set the webhook URL to `<host>/github/webhook`, send the `installation` event, and put the secret in `GITHUB_WEBHOOK_SECRET` (Secret Manager secret `github-webhook-secret`). An uninstall revokes the API key and drops the saved report; billing rows are kept. `deploy.sh` does not mount that secret, so the key keeps working after an uninstall until you add it: `gcloud run services update spendtron --region us-central1 --update-secrets GITHUB_WEBHOOK_SECRET=github-webhook-secret:latest`. Leave **Request user authorization (OAuth) during installation** off; the server starts OAuth itself so `state` is bound to the installation id. Generate a client secret and set `GITHUB_APP_CLIENT_ID` and `GITHUB_APP_CLIENT_SECRET`. Make the App public before sending customers to `/github/install`. On Cloud Run, create the two OAuth secrets before the next deploy (`github-app-client-id`, `github-app-client-secret`); `deploy.sh` mounts them, and without them the new revision's `/ready` stays not-ready and `/github/callback` will not issue keys.
+3. Returning users sign in at `/login`: GitHub OAuth, then the report for the one installation they manage, or a picker if there are several. The report cookie is a signed session token and is the only thing that can open pull requests. The `?token=` link MCP returns is a share token and stays read-only even if pasted into a cookie.
+4. Create a Neon Postgres database, run `db/schema.sql` against it. The file is safe to rerun. An existing database picks up the `audit_reports` table and the `installations.uninstalled_at` column from it.
+5. Stripe is legacy. The audit is free. Keep the webhook at `/stripe/webhook` so an older `checkout.session.completed` still records. Do not create a new charge for the report.
+6. Map both `spendtron.com` and `www.spendtron.com` to the Cloud Run service (www should CNAME to `ghs.googlehosted.com` at Squarespace). The app 301s www → apex.
+7. Privacy / terms for Stripe: `https://spendtron.com/privacy` and `https://spendtron.com/terms`.
+8. `npm install && npm start`.
 
 ## Test
 

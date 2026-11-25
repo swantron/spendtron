@@ -1,0 +1,13 @@
+name: spendtron
+description: Rank this repository's recent Actions jobs at GitHub's current per-runner rates and write the result to the job summary.
+runs:
+  using: composite
+  steps:
+    - name: Rank Actions jobs
+      shell: bash
+      env:
+        GITHUB_TOKEN: ${{ github.token }}
+        GITHUB_REPOSITORY: ${{ github.repository }}
+        GITHUB_EVENT_NAME: ${{ github.event_name }}
+        GITHUB_EVENT_PATH: ${{ github.event_path }}
+      run: node "${{ github.action_path }}/run.js"

@@ -10,6 +10,10 @@ create table if not exists installations (
   created_at timestamptz not null default now()
 );
 
+-- Set by the installation.deleted webhook. The key hash is replaced at the
+-- same time, so the old key stops authenticating. Billing rows are kept.
+alter table installations add column if not exists uninstalled_at timestamptz;
+
 create index if not exists installations_api_key_hash_idx
   on installations (api_key_hash);
 
@@ -26,4 +30,12 @@ create table if not exists subscriptions (
   status text not null default 'inactive',
   fixes_unlocked_at timestamptz,
   updated_at timestamptz not null default now()
+);
+
+-- Last live sample for an installation. MCP reads this instead of crawling
+-- GitHub on every tool call. Replaced on refresh. Deleted with the installation.
+create table if not exists audit_reports (
+  installation_id bigint primary key references installations (installation_id) on delete cascade,
+  report jsonb not null,
+  computed_at timestamptz not null default now()
 );

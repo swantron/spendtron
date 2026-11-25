@@ -2,8 +2,8 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.swantron/spendtron",
   "title": "spendtron",
-  "description": "Rank your GitHub org's Actions workflows by real compute cost. Read-only audit via GitHub App.",
-  "version": "1.0.0",
+  "description": "Finds the GitHub Actions workflow eating your CI bill and suggests fix diffs, verified against runs.",
+  "version": "1.1.0",
   "websiteUrl": "https://spendtron.com",
   "repository": {
     "url": "https://github.com/swantron/spendtron",

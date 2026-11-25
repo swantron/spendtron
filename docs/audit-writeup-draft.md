@@ -33,10 +33,10 @@ None of these need a runner migration or a new tool:
 
 ## Check your own org
 
-The audit logic is now a small read-only service called spendtron. It uses a GitHub App with two permissions (Actions: read, Metadata: read), so it can't see your code or secrets and never pushes changes. You can call it from Claude or any MCP client, or install the GitHub App directly.
+The audit logic is now a small read-only service called spendtron. It uses a GitHub App with three read-only permissions (Actions, Contents, and Metadata). Contents access is used to read workflow YAML. It never requests secrets and never pushes changes. You can call it from Claude or any MCP client, or install the GitHub App directly.
 
 - Site: https://spendtron.com
 - MCP endpoint: https://spendtron.com/mcp
-- The first audit per org is free; after that it's $99/month.
+- Paste a detailed usage export at `/audit` for the chart. The live sample and the pull requests are free.
 
 If your top workflow turns out to be a surprise, I'd like to hear what it was.

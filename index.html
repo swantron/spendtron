@@ -3,9 +3,9 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
-  <title>spendtron — Find the workflow eating your CI bill</title>
+  <title>spendtron — Price the Actions minute, then open the pull request</title>
   <link rel="canonical" href="https://spendtron.com/" />
-  <meta name="description" content="GitHub tells you the total. spendtron tells you which workflow. Read-only GitHub Actions cost audit, available as a GitHub App and an MCP server for Claude and other AI clients." />
+  <meta name="description" content="Paste GitHub's Actions usage export and see which workflow costs what, at current runner rates, before you connect anything. The GitHub App opens the pull request." />
   <style>
     :root {
       --bg: #0d1117; --panel: #161b22; --border: #30363d;
@@ -61,66 +61,70 @@
     .price .card { flex: 1; min-width: 240px; }
     .price .amt { font-size: 32px; font-weight: 700; color: var(--text); }
     .foot { color: var(--muted); font-size: 13px; margin-top: 56px; text-align: center; }
+    textarea { width: 100%; min-height: 140px; margin: 8px 0 12px; background: #010409; color: var(--text); border: 1px solid var(--border); border-radius: 8px; padding: 12px; font: 13px ui-monospace, SFMono-Regular, Menlo, monospace; }
+    button.btn { border: 0; cursor: pointer; font-family: inherit; }
   </style>
 </head>
 <body>
   <div class="wrap">
-    <div class="eyebrow">spendtron · GitHub Actions cost visibility</div>
-    <h1>Find the workflow that's eating your CI bill.</h1>
-    <p class="sub">GitHub shows you a total. It never tells you <em>which workflow</em>. spendtron ranks every workflow and repo by real compute cost.</p>
+    <div class="eyebrow">spendtron · GitHub Actions cost</div>
+    <h1>GitHub shows the workflow. spendtron prices the runner and opens the pull request.</h1>
+    <p class="sub">Paste the detailed usage export. The chart uses GitHub's own net dollars, before an install or an API key. Connect the app when you want a live job sample and a pull request for the safe edits.</p>
 
     <div id="banner" class="stat" hidden></div>
 
     <div class="stat">
       <div class="big">36%</div>
-      <p>In an audit of my own repos, a <b>single workflow</b> was 36% of the entire CI compute. The top 3 were 59%. Nobody had noticed, because GitHub bills by repo, never by workflow, so the biggest line item stays invisible until someone digs for it. <a href="/blog/ci-audit-36-percent">Read the write-up</a>.</p>
+      <p>In an audit of my own public repos, one workflow was 36% of sampled compute. The actual Actions bill was about $0, because standard runners on public repositories are free. The shape is still the thing worth seeing. <a href="/blog/ci-audit-36-percent">Read the write-up</a>.</p>
     </div>
 
-    <h2>Two ways in</h2>
+    <h2>Start with the export</h2>
+    <form action="/audit" method="post">
+      <textarea name="csv" placeholder="Paste the detailed usage CSV. It needs workflow_path and net_amount." required></textarea>
+      <button class="btn" type="submit">Show the chart</button>
+    </form>
+    <p class="sub">GitHub → Settings → Billing and licensing → Usage → Get usage report → Detailed. The file is rendered and not stored. If the net amount is inside included compute, the page says the marginal invoice is likely $0.</p>
+
+    <h2>Then, if you want the pull request</h2>
     <div class="paths">
       <div class="card">
-        <h3>Install the GitHub App</h3>
-        <p>Pick the repos you want audited in GitHub's own install screen. You get an API key and the ranking is always free.</p>
+        <h3>Connect GitHub</h3>
+        <p>The live sample bills each job at its runner SKU. macOS, larger runners, and parallel jobs add up. The chart is the next page, before the API key matters.</p>
         <a class="btn" href="/github/install">Connect GitHub</a>
       </div>
       <div class="card">
-        <h3>Use it from your AI client</h3>
-        <p>spendtron is an MCP server. After connecting GitHub, add it to Claude or any MCP client and ask "which of my workflows costs the most?"</p>
-        <pre><code id="mcp-cmd">claude mcp add --transport http spendtron https://spendtron.com/mcp \
-  --header "Authorization: Bearer YOUR_API_KEY"</code></pre>
+        <h3>Or run it in the repo</h3>
+        <p>A composite action writes the same ranking to the job summary, using the workflow token. No spendtron account.</p>
+        <pre><code>permissions:
+  actions: read
+  pull-requests: write
+steps:
+  - uses: swantron/spendtron/github-action@main</code></pre>
       </div>
     </div>
 
-    <h2>How it works</h2>
-    <ol>
-      <li><b>Connect GitHub.</b> Install the app on the org or repos you choose. It asks for three read-only permissions.</li>
-      <li><b>Save your API key.</b> It's shown once after install. Add it as a bearer token in your MCP client, or keep it for direct calls.</li>
-      <li><b>Run the audit.</b> Call the <code>check_actions_cost</code> tool. No arguments needed, your key identifies your org.</li>
-      <li><b>Read the ranking, and one confirmed fix, free.</b> Every call includes the full cost ranking and the single most-confirmed fix diff — verified against your real run history, not an estimate.</li>
-    </ol>
-
-    <h2>What it can and can't touch</h2>
+    <h2>What the pull request will and will not change</h2>
     <ul>
-      <li><b>Read-only.</b> Actions, Contents, and Metadata: read. Contents access is what lets it read your workflow YAML to suggest fixes — it still can't change your code, secrets, or settings.</li>
-      <li><b>Scoped by you.</b> It only reads the repos you select at install time, and you can uninstall from GitHub at any time.</li>
-      <li><b>Diffs, never pushes.</b> It suggests pasteable YAML changes. It does not open pull requests or edit workflow files itself.</li>
+      <li><b>It will apply</b> a timeout, cancel-in-progress on a workflow that is not a deploy, and a short public-repo job moving off a larger Linux runner.</li>
+      <li><b>It will describe</b> missing path filters, a matrix that multiplies the bill, a duplicate push and pull_request trigger, and a macOS runner with no Apple toolchain. Those edits change which jobs run, so they stay in the pull request body.</li>
+      <li><b>It will not shorten a healthy run</b> with timeout-minutes. That line is a hang guard, listed last.</li>
     </ul>
 
-    <h2>Pricing</h2>
+    <h2>Price</h2>
     <div class="price">
       <div class="card">
-        <h3>Ranking</h3>
+        <h3>Chart, sample, pull requests</h3>
         <div class="amt">Free</div>
-        <p>Every call to <code>check_actions_cost</code>, no limit. Also includes one confirmed fix diff per call, always free.</p>
+        <p>The export, the live sample, and the pull requests you request. MCP reads the saved report.</p>
       </div>
       <div class="card">
-        <h3>Full fix list</h3>
-        <div class="amt">$39<span style="font-size:16px;color:var(--muted)"> one-time</span></div>
-        <p>Unlocks every confirmed fix diff for your org, permanently. Not a subscription — pay once.</p>
+        <h3>Written audit</h3>
+        <div class="amt">Quote</div>
+        <p>When the export or the run-rate is about $200 or more, email <a href="mailto:joe@swantron.com">joe@swantron.com</a>. Below that, included compute often means the invoice is already $0.</p>
       </div>
     </div>
 
-    <p class="foot">spendtron · <a href="/github/install">Connect GitHub</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></p>
+    <p class="foot">spendtron · <a href="/audit">Billing export</a> · <a href="/github/install">Connect GitHub</a> · <a href="/privacy">Privacy</a> · <a href="/terms">Terms</a></p>
   </div>
   <script>
     (function () {

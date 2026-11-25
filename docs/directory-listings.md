@@ -7,28 +7,27 @@ from that registry, so publishing there first means less to fill in by hand.
 ## Common fields (reuse everywhere)
 
 - **Name:** spendtron
-- **One-liner (≤80 chars):** Find the workflow eating your CI bill — with fix diffs, verified.
+- **One-liner (≤80 chars):** Price Actions jobs at current runner rates and open the pull request.
 - **Category / tags:** DevOps, CI/CD, GitHub, cost, observability
 - **Repo:** https://github.com/swantron/spendtron
 - **Homepage:** https://spendtron.com
 - **MCP endpoint:** https://spendtron.com/mcp (streamable HTTP)
 - **Auth:** Bearer token (API key). No OAuth.
-- **Tools (1):** `check_actions_cost` — no arguments; ranks the connected GitHub
-  org's Actions workflows and repos by real compute cost, plus fix diffs
-  (missing cache, missing `timeout-minutes`) confirmed against real recent
-  run timing, not estimates.
-- **Pricing:** cost ranking and one confirmed fix diff free on every call.
-  Unlocking the full fix list is a one-time $39 — not a subscription.
+- **Tools (1):** `check_actions_cost` — no arguments; returns the saved report
+  (per-job runner rates and corroborated workflow changes). Scanning happens
+  on `/report`, not inside the tool call.
+- **Pricing:** chart, live sample, and pull requests are free. A written
+  audit is quoted when the figure is about $200 or more.
 - **Logo:** none yet — reuse the landing page's accent green (#3fb950) on
   dark (#0d1117) if a directory wants brand colors.
 
 ### Short description (≤160 chars, for cards/listings)
 
-> Ranks your GitHub org's Actions workflows by real compute cost and suggests pasteable fix diffs, confirmed against your run history. Ranking + 1 fix free; rest is $39 one-time.
+> Prices GitHub Actions jobs at current runner rates. Paste a usage export for the chart, or connect the app to open a pull request. Free.
 
 ### Long description (about/README-style)
 
-> GitHub Actions shows you a total bill. It doesn't show you which workflow drove it, and it doesn't tell you what to change. spendtron does both: connect a read-only GitHub App (Actions, Contents, Metadata — no write access, no secrets) and call `check_actions_cost` from Claude or any MCP client to get your workflows and repos ranked by compute cost, plus fix diffs like a missing browser-install cache or a missing `timeout-minutes` guard against a runaway job — each one confirmed against your actual recent run timing before it's ever shown, not an estimate. In one real audit, a single workflow turned out to be 36% of all CI compute across the fleet — invisible until someone looked. The ranking and one confirmed fix are free on every call; unlocking the full fix list is a one-time $39, not a subscription.
+> GitHub Insights already shows workflow minutes. spendtron prices each job at the current runner SKU (parallel jobs add; public standard runners are $0; larger runners are billed on public repositories) and opens a pull request for the safe edits. Paste the detailed usage CSV at /audit for a chart with no account. The chart and the pull requests are free. A written audit is quoted when the figure is about $200 or more.
 >
 > Write-up: https://spendtron.com/blog/ci-audit-36-percent
 
@@ -52,9 +51,7 @@ Get an API key by installing the GitHub App: https://spendtron.com/github/instal
   needs this set correctly so it prompts installers for the key instead of
   trying an OAuth flow.
 - Tools: 1 (`check_actions_cost`).
-- License: none declared in the repo yet — add one (e.g. MIT, or "proprietary"
-  if this should stay closed-source) before submitting, since Smithery's
-  manifest expects a license field.
+- License: MIT (`LICENSE`, and `"license": "MIT"` in `package.json`).
 
 ## Glama (glama.ai)
 

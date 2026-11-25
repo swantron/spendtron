@@ -15,28 +15,42 @@
 </head>
 <body>
   <h1>Privacy</h1>
-  <p class="muted">Last updated September 19, 2026</p>
+  <p class="muted">Last updated November 24, 2026</p>
   <p>
     spendtron is a sole proprietorship of Joe Swanson in Bozeman, Montana.
     Support: <a href="mailto:joe@swantron.com">joe@swantron.com</a>.
   </p>
   <p>
-    You connect a GitHub App (spendtron-app) with read-only Actions and Metadata
-    permissions on the repositories you choose. We use that installation to
-    list those repos and sample recent workflow runs so we can rank them by
-    compute. We do not request access to source code, secrets, or write
-    permissions. You can uninstall the App from GitHub at any time.
+    You can load a GitHub detailed usage CSV on the site. With JavaScript on,
+    the file is read and charted in your browser and is not sent to us.
+    Without JavaScript, the form posts it to the server, which renders the
+    chart in the response and does not store it.
   </p>
   <p>
-    After install we issue an API key. We store only a SHA-256 hash of that
-    key, plus the GitHub installation id and account login, in Postgres (Neon).
-    The raw key is shown once. If you rotate it, the previous hash is replaced.
+    You can connect a GitHub App (spendtron-app) on the repositories you
+    choose. Reading the sample uses Actions, Contents, and Metadata. Opening
+    a pull request from the report button also needs Contents and Pull
+    requests write, which you grant on the App and accept on the installation.
+    We do not request secrets. You can uninstall the App from GitHub at any
+    time. When the webhook is configured, uninstalling deletes the
+    installation row and the saved report.
   </p>
   <p>
-    If you subscribe ($99/mo), Stripe processes the card and stores billing
-    email. We store Stripe customer and subscription ids so we can unlock
-    audits while the subscription is active and so you can open the Stripe
-    billing portal. We do not sell GitHub or billing data.
+    Before we issue an API key, GitHub sends you through its OAuth prompt. We
+    exchange that one-time code for a user access token, use it only to confirm
+    your account can manage the installation, and then discard it. We do not
+    store the token or your GitHub user id. We store only a SHA-256 hash of
+    the API key, plus the GitHub installation id and account login, in
+    Postgres (Neon). The raw key is shown once. If you rotate it, the previous
+    hash is replaced.
+  </p>
+  <p>
+    The chart, the sample, and pull requests you request are free. A saved
+    report (workflow names, job minutes, runner rates, and the suggested
+    changes) is stored for the installation so later visits and MCP calls do
+    not crawl GitHub again. It is replaced when you refresh. Stripe records
+    from earlier payments, if any, stay as a customer id and a timestamp. We
+    do not sell GitHub or billing data.
   </p>
   <p>
     GoatCounter records page views on spendtron.com (path, referrer, country,
