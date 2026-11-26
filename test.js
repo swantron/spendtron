@@ -760,6 +760,61 @@ function fakeOctokit({ repos, runs, jobs }) {
     assert(sitemap.includes(`/guides/${slug}<`) && home.includes(`/guides/${slug}"`), `guide ${slug} is in the sitemap and linked from the homepage`);
   }
 
+  // ---- free tools ----
+  const { lintWorkflow, cronIntervalMinutes, matrixSize } = require("./lib/workflowLint");
+  const wf = [
+    "name: CI",
+    "on:",
+    "  push:",
+    "  pull_request:",
+    "  schedule:",
+    '    - cron: "*/5 * * * *"',
+    "jobs:",
+    "  test:",
+    "    runs-on: ${{ matrix.os }}",
+    "    strategy:",
+    "      matrix:",
+    "        os: [ubuntu-latest, macos-latest]",
+    "        node: [20, 22]",
+    "    steps:",
+    "      - uses: actions/setup-node@v4",
+    "      - run: npx playwright install",
+    "  big:",
+    "    runs-on: ubuntu-latest-8-cores",
+    "    timeout-minutes: 10",
+    "    steps:",
+    "      - run: make",
+  ].join("\n");
+  const lint = lintWorkflow(wf);
+  const checks = new Set(lint.findings.map((f) => f.check));
+  for (const check of ["duplicate-trigger", "missing-concurrency", "frequent-schedule", "missing-path-filters", "macos-runner", "matrix-fanout", "missing-browser-cache", "missing-dependency-cache", "missing-timeout", "larger-runner"]) {
+    assert(checks.has(check), `workflow lint flags ${check}`);
+  }
+  assert(!lint.findings.some((f) => f.check === "missing-timeout" && f.job === "big"), "workflow lint leaves an existing timeout alone");
+  assert(/cancel-in-progress: \$\{\{ github.event_name == 'pull_request' \}\}/.test(lint.patchedYaml) && /timeout-minutes: 30/.test(lint.patchedYaml), "workflow lint patches concurrency and timeout");
+  assert(lint.findings[0].severity === "high", "workflow lint sorts high severity first");
+  const publicLint = lintWorkflow(wf, { visibility: "public" });
+  assert(!publicLint.findings.some((f) => f.check === "macos-runner"), "standard macOS on a public repo is free, so not flagged");
+  assert(publicLint.findings.some((f) => f.check === "larger-runner" && f.severity === "high"), "larger runner on a public repo is high severity");
+  const deployLint = lintWorkflow("on: [push, pull_request]\njobs:\n  deploy:\n    runs-on: ubuntu-latest\n    steps:\n      - run: kubectl apply -f k8s\n");
+  assert(deployLint.deployish && !/concurrency/.test(deployLint.patchedYaml || ""), "deploy workflow gets no automatic concurrency patch");
+  assert(!lintWorkflow("jobs: [").ok && !lintWorkflow("").ok && !lintWorkflow("foo: 1").ok, "workflow lint rejects bad input");
+  assert(!lintWorkflow("x".repeat(210 * 1024)).ok, "workflow lint caps input size");
+  assert(cronIntervalMinutes("*/15 * * * *") === 15 && cronIntervalMinutes("0 * * * *") === 60 && cronIntervalMinutes("0 3 * * *") === null, "cron interval parsing");
+  assert(matrixSize({ strategy: { matrix: { a: [1, 2, 3], b: [1, 2], exclude: [{ a: 1, b: 1 }] } } }) === 5, "matrix size counts excludes");
+
+  assert(serverSource.includes('app.post("/api/check-workflow"') && serverSource.includes('"check_workflow_yaml"'), "server exposes the checker over HTTP and MCP");
+  assert(typeof sandbox.window.spendtron.rates.classifyRunner === "function" && sandbox.window.spendtron.plans.length === 3, "browser bundle exposes rates and plans for the calculators");
+  const toolPages = fs.readdirSync("./public/tools").filter((f) => f.endsWith(".html") && f !== "index.html");
+  assert(toolPages.length === 4, "four tool pages");
+  const toolsHub = fs.readFileSync("./public/tools/index.html", "utf8");
+  for (const page of toolPages) {
+    const slug = page.replace(/\.html$/, "");
+    const text = fs.readFileSync(`./public/tools/${page}`, "utf8");
+    assert(sitemap.includes(`/tools/${slug}<`) && home.includes(`/tools/${slug}"`) && toolsHub.includes(`/tools/${slug}"`), `tool ${slug} is in the sitemap, homepage and hub`);
+    assert(text.includes("/tools/tools.js") && (slug === "workflow-checker" || text.includes('src="/audit.js"')), `tool ${slug} loads its scripts`);
+  }
+
   const body = Buffer.from("{}");
   const secret = "whsec";
   const signature = `sha256=${crypto.createHmac("sha256", secret).update(body).digest("hex")}`;

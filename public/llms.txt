@@ -8,9 +8,17 @@
 - Auth: `Authorization: Bearer <API key>`. The key is shown once after installing the GitHub App at https://spendtron.com/github/install
 - Claude Code: `claude mcp add --transport http spendtron https://spendtron.com/mcp --header "Authorization: Bearer YOUR_API_KEY"`
 
-## Tool
+## Tools
 
-- `check_actions_cost`: no arguments. Returns the saved report: workflows priced per job at current runner rates, plus corroborated changes. It does not scan GitHub. Open `/report` once to build the sample.
+- `check_workflow_yaml`: arguments `yaml` (one workflow file) and optional `visibility` (`public` or `private`). No API key needed. A static cost review covering duplicate triggers, missing concurrency, path filters and timeouts, macOS and larger runners, matrix width, frequent schedules and missing caches. Returns findings and a patched copy with the safe fixes applied. Nothing is stored. The same check is available over HTTP: `POST https://spendtron.com/api/check-workflow` with JSON `{"yaml": "...", "visibility": "private"}`.
+- `check_actions_cost`: no arguments; needs the API key. Returns the saved report: workflows priced per job at current runner rates, plus corroborated changes. It does not scan GitHub. Open `/report` once to build the sample.
+
+## Free web tools
+
+- Workflow cost checker: https://spendtron.com/tools/workflow-checker
+- GitHub Actions cost calculator: https://spendtron.com/tools/github-actions-cost-calculator
+- Self-hosted vs GitHub-hosted break-even: https://spendtron.com/tools/self-hosted-runner-cost
+- Larger runner calculator: https://spendtron.com/tools/larger-runner-calculator
 
 ## Access and pricing
 

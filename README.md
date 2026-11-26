@@ -19,6 +19,13 @@ steps:
 
 Pull requests from forks get a read-only token, so they get the job summary and no comment.
 
+Free tools under `/tools/` act as SEO landing pages and need no account:
+
+- **Workflow checker** (`/tools/workflow-checker`): `POST /api/check-workflow` → `lib/workflowLint.js`, a static check with no run data. It is also the keyless MCP tool `check_workflow_yaml`. The pasted YAML is not stored.
+- **Cost calculator**, **self-hosted break-even** and **larger runner calculator** run in the browser. They take their rates from `runnerRates.js` through `/audit.js`, so the rate table has one source.
+
+The pages are static HTML in `public/tools/`, and `public/tools/tools.js` drives all four.
+
 The underlying audit logic started as `~/code/ci-audit/actions-teardown.sh` (bash + `gh api`) — `lib/auditActions.js` is the same algorithm, ported to run per-installation against many customers' orgs instead of one local `gh`-authenticated user.
 
 ## Status

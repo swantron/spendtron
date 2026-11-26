@@ -52,6 +52,8 @@ const { auditFormPage, csvReportPage, reportPage } = require("./lib/pages");
 const { browserBundle } = require("./lib/browserBundle");
 const { openFixPullRequests } = require("./lib/openFixPr");
 const { verifyGithubWebhook } = require("./lib/githubWebhook");
+const { lintWorkflow } = require("./lib/workflowLint");
+const { z } = require("zod");
 
 const app = express();
 // Cloud Run terminates TLS and forwards over plain HTTP with
@@ -269,6 +271,18 @@ app.post("/audit", (req, res) => {
     return res.status(400).type("html").send(auditFormPage({ error: report.error }));
   }
   res.type("html").send(csvReportPage(report));
+});
+
+/**
+ * The workflow checker. The pasted file is parsed in memory and not stored
+ * or logged. No GitHub account or API key is involved.
+ */
+app.post("/api/check-workflow", (req, res) => {
+  res.setHeader("Cache-Control", "private, no-store");
+  const yaml = typeof req.body?.yaml === "string" ? req.body.yaml : "";
+  const visibility = req.body?.visibility === "public" ? "public" : "private";
+  const result = lintWorkflow(yaml, { visibility });
+  res.status(result.ok ? 200 : 400).json(result);
 });
 
 /**
@@ -632,6 +646,30 @@ mcpServer.registerTool(
       stale: Boolean(cached && cached.stale),
     });
     return { content: [{ type: "text", text }] };
+  },
+);
+
+mcpServer.registerTool(
+  "check_workflow_yaml",
+  {
+    title: "Check a GitHub Actions workflow for cost",
+    description:
+      "Static cost review of one GitHub Actions workflow file: duplicate push and pull_request runs, missing concurrency, path filters and timeouts, macOS and larger runners, wide matrices, frequent schedules, missing dependency caches. Returns findings and, where safe, a patched copy. No API key needed. Nothing is stored.",
+    inputSchema: z.object({
+      yaml: z.string().describe("The full contents of one file from .github/workflows"),
+      visibility: z.enum(["public", "private"]).optional().describe("Repository visibility; standard runners are free on public repositories"),
+    }),
+    annotations: { readOnlyHint: true, openWorldHint: false },
+  },
+  async ({ yaml, visibility }) => {
+    const result = lintWorkflow(yaml, { visibility: visibility || "private" });
+    if (!result.ok) return { content: [{ type: "text", text: result.error }], isError: true };
+    const lines = result.findings.length
+      ? result.findings.map((f) => `- [${f.severity}] ${f.summary}${f.fix ? `\n  Suggested:\n${f.fix.replace(/^/gm, "    ")}` : ""}`)
+      : ["No cost issues found by the static checks."];
+    if (result.patchedYaml) lines.push("", "Patched file (concurrency and timeouts only):", "```yaml", result.patchedYaml.trimEnd(), "```");
+    lines.push("", "Per-job cost from real runs: https://spendtron.com/");
+    return { content: [{ type: "text", text: lines.join("\n") }] };
   },
 );
 
