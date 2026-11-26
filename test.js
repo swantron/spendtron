@@ -385,14 +385,7 @@ function fakeOctokit({ repos, runs, jobs }) {
     serverCode.includes("www.spendtron.com"),
     "www host redirects to apex",
   );
-  assert(
-    html.includes("spendtron.goatcounter.com"),
-    "GoatCounter host matches the product name",
-  );
-  assert(
-    !html.includes("spentron.goatcounter.com"),
-    "old GoatCounter typo is gone",
-  );
+  assert(!html.includes("goatcounter"), "no third-party page counter");
   assert(html.includes("/audit"), "landing page leads with the billing export");
   assert(!html.includes("$39"), "landing page no longer sells the $39 unlock");
   assert(
