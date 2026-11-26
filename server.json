@@ -2,13 +2,13 @@
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.swantron/spendtron",
   "title": "spendtron",
-  "description": "GitHub Actions cost: check a workflow file for waste, or read your saved per-job cost report.",
+  "description": "GitHub Actions cost: check any workflow file for waste (no key), or read your per-job cost report.",
   "websiteUrl": "https://spendtron.com/tools/workflow-checker",
   "repository": {
     "url": "https://github.com/swantron/spendtron",
     "source": "github"
   },
-  "version": "1.0.0",
+  "version": "1.2.0",
   "remotes": [
     {
       "type": "streamable-http",
@@ -16,10 +16,17 @@
       "headers": [
         {
           "name": "Authorization",
-          "description": "Optional. Bearer API key from installing the GitHub App at spendtron.com/github/install; needed only for check_actions_cost. check_workflow_yaml works without it.",
+          "description": "Optional. Needed only for check_actions_cost: your spendtron API key, shown once after installing the GitHub App at https://spendtron.com/github/install. check_workflow_yaml works without it.",
           "isRequired": false,
           "isSecret": true,
-          "format": "string"
+          "value": "Bearer {api_key}",
+          "variables": {
+            "api_key": {
+              "description": "spendtron API key",
+              "isRequired": false,
+              "isSecret": true
+            }
+          }
         }
       ]
     }
